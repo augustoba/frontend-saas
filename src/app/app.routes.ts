@@ -10,7 +10,7 @@ export const routes: Routes = [
       import('./features/catalog/catalog-page/catalog-page.component').then(
         (m) => m.CatalogPageComponent
       ),
-    title: 'Estilos Pequeños | Ropa para niños',
+    title: undefined, // la home: sólo el nombre de la tienda (StoreTitleStrategy)
   },
   {
     path: 'producto/:id',
@@ -18,13 +18,25 @@ export const routes: Routes = [
       import('./features/product-detail/product-detail-page/product-detail-page.component').then(
         (m) => m.ProductDetailPageComponent
       ),
-    title: 'Producto | Estilos Pequeños',
+    title: 'Producto',
   },
   {
     path: 'carrito',
     loadComponent: () =>
       import('./features/cart/cart-page/cart-page.component').then((m) => m.CartPageComponent),
-    title: 'Carrito | Estilos Pequeños',
+    title: 'Carrito',
+  },
+  {
+    path: 'nosotros',
+    loadComponent: () =>
+      import('./features/about/about-page/about-page.component').then((m) => m.AboutPageComponent),
+    title: 'Quiénes somos',
+  },
+  {
+    path: 'promos',
+    loadComponent: () =>
+      import('./features/promos/promos-page/promos-page.component').then((m) => m.PromosPageComponent),
+    title: 'Promociones',
   },
   {
     path: 'como-comprar',
@@ -32,7 +44,7 @@ export const routes: Routes = [
       import('./features/help/como-comprar-page/como-comprar-page.component').then(
         (m) => m.ComoComprarPageComponent
       ),
-    title: 'Cómo comprar | Estilos Pequeños',
+    title: 'Cómo comprar',
   },
   {
     path: 'mis-pedidos',
@@ -40,7 +52,7 @@ export const routes: Routes = [
       import('./features/orders/mis-pedidos-page/mis-pedidos-page.component').then(
         (m) => m.MisPedidosPageComponent
       ),
-    title: 'Mis pedidos | Estilos Pequeños',
+    title: 'Mis pedidos',
   },
   {
     path: 'admin/login',

@@ -13,7 +13,7 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   TRANSFER: 'Transferencia (alias/CBU)',
   QR_TRANSFER: 'QR de transferencia',
   QR_CARD: 'Tarjeta (QR o link)',
-  CASH: 'Efectivo al recibir/retirar',
+  CASH: 'Efectivo',
   MERCADOPAGO: 'Mercado Pago',
   POSNET: 'Tarjeta (posnet del local)',
 };

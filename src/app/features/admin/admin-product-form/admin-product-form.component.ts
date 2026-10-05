@@ -108,6 +108,7 @@ export class AdminProductFormComponent {
     supplierId: [this.editingProduct?.supplierId ?? ''],
     costPrice: [this.editingProduct?.costPrice ?? 0, [Validators.min(0)]],
     barcode: [this.editingProduct?.barcode ?? this.scannedBarcode ?? ''],
+    featuredInPromos: [this.editingProduct?.featuredInPromos ?? false],
     ivaRate: [this.editingProduct?.ivaRate ?? 21, [Validators.min(0)]],
   });
 
@@ -402,6 +403,7 @@ export class AdminProductFormComponent {
       sizeScaleId: value.sizeScaleId || undefined,
       supplierId: value.supplierId || undefined,
       barcode: value.barcode.trim() || undefined,
+      featuredInPromos: !!value.featuredInPromos,
       costPrice: value.costPrice > 0 ? value.costPrice : undefined,
       ivaRate: value.ivaRate >= 0 ? value.ivaRate : undefined,
       lowStockThreshold: this.lowStockThreshold() ?? undefined,

@@ -131,6 +131,34 @@ export class ProductService {
     return this.http.get<Product>(apiUrl('/admin/products/by-barcode'), { params: { code } });
   }
 
+  /** Borra para siempre un producto ya archivado (y sus fotos, si hay credenciales). */
+  permanentlyDelete(id: string, onSuccess?: () => void): void {
+    this.mutate(this.http.delete(apiUrl(`/admin/products/${id}/permanent`)), onSuccess);
+  }
+
+  /**
+   * Ajuste masivo de precio por %. Sin `ids` = todos los
+   * productos no archivados. Sólo toca `price`, nunca `costPrice`.
+   */
+  bulkAdjustPrice(percent: number, ids?: string[]): Observable<{ updated: number }> {
+    const req = this.http.patch<{ updated: number }>(apiUrl('/admin/products/bulk-price'), {
+      ids: ids?.length ? ids : null,
+      percent,
+    });
+    return new Observable<{ updated: number }>((sub) => {
+      const s = req.subscribe({
+        next: (res) => {
+          this.adminStore.reload();
+          this.publicStore.load();
+          sub.next(res);
+          sub.complete();
+        },
+        error: (err) => sub.error(err),
+      });
+      return () => s.unsubscribe();
+    });
+  }
+
   /** Restaura un producto archivado (queda oculto: hay que republicarlo a mano). */
   restore(id: string, onSuccess?: () => void): void {
     this.mutate(this.http.post(apiUrl(`/admin/products/${id}/restore`), {}), onSuccess);

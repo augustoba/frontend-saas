@@ -12,10 +12,12 @@ import { CldImagePipe } from '../../../shared/pipes/cld-image.pipe';
 type Section = 'identity' | 'social' | 'about' | 'whatsapp' | 'pagos';
 
 /** Campos de `SiteSettings` que guardan la URL de una imagen (Cloudinary). */
-type ImageField = 'logoUrl' | 'paymentQrTransferImage' | 'paymentQrCardImage';
+type ImageField = 'logoUrl' | 'paymentQrTransferImage' | 'paymentQrCardImage' | 'storePhotoUrl' | 'promoBannerImage';
 
 /** Carpeta y nombre en Cloudinary para cada campo de imagen. */
 const IMAGE_UPLOAD: Record<ImageField, { folder: string; publicId: string }> = {
+  storePhotoUrl: { folder: 'local', publicId: 'foto-local' },
+  promoBannerImage: { folder: 'marketing', publicId: 'banner-promo' },
   logoUrl: { folder: 'logo', publicId: 'logo' },
   paymentQrTransferImage: { folder: 'pagos', publicId: 'qr-transferencia' },
   paymentQrCardImage: { folder: 'pagos', publicId: 'qr-tarjeta' },
@@ -210,6 +212,11 @@ export class AdminConfigSectionComponent {
             whatsappIntro: d.whatsappIntro?.trim() || null,
             whatsappClosing: d.whatsappClosing?.trim() || null,
             storeAddress: d.storeAddress?.trim() || null,
+            storePhotoUrl: d.storePhotoUrl || null,
+            aboutPageEnabled: d.aboutPageEnabled,
+            promoBannerEnabled: d.promoBannerEnabled,
+            promoBannerImage: d.promoBannerImage || null,
+            promoBannerLink: d.promoBannerLink?.trim() || null,
           });
 
     save$.subscribe((ok) => {

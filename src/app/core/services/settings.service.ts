@@ -136,13 +136,15 @@ export interface SiteSettings {
    * local" (`admin-pos`), que sigue ofreciendo todos los medios.
    */
   mercadoPagoAvailable: boolean;
-  /**
-   * Foto del local y página "Nosotros": existen en el ecommerce de Ruth y las
-   * lee la plantilla Mosaico, pero el backend del SaaS todavía no las manda —
-   * opcionales a propósito: sin valor, esos bloques no se dibujan.
-   */
-  storePhotoUrl?: string | null;
-  aboutPageEnabled?: boolean;
+  /** Foto del local (identidad): la muestran "Nosotros" y el diseño Mosaico. */
+  storePhotoUrl: string | null;
+  /** Página pública /nosotros habilitada. */
+  aboutPageEnabled: boolean;
+  /** Banner emergente de promoción (una vez por pestaña, sólo páginas públicas). */
+  promoBannerEnabled: boolean;
+  promoBannerImage: string | null;
+  /** A dónde lleva el banner: /promos, /producto/xxx o una URL. */
+  promoBannerLink: string | null;
   /** Sistema de la tienda: decide qué menú ve el panel y qué sitio público tiene. */
   sistema: Sistema;
   /** `sistema === 'POS'` (lo manda el backend por compatibilidad; preferir `sistema`). */
@@ -214,6 +216,11 @@ const DEFAULTS: SiteSettings = {
   socialShareEnabled: true,
   mercadoPagoAvailable: false,
   sistema: 'ECOMMERCE',
+  storePhotoUrl: null,
+  aboutPageEnabled: false,
+  promoBannerEnabled: false,
+  promoBannerImage: null,
+  promoBannerLink: null,
   posEnabled: false,
   ecommerceSiteEnabled: true,
   arcaAvailable: false,
@@ -347,10 +354,12 @@ export class SettingsService {
     const {
       storeName, whatsappNumber, aboutText, instagram, facebookUrl, logoUrl, logoShape,
       whatsappIntro, whatsappClosing, storeAddress, helpText, faqText,
+      storePhotoUrl, aboutPageEnabled, promoBannerEnabled, promoBannerImage, promoBannerLink,
     } = full;
     return this.putMerged('/admin/settings/platform', {
       storeName, whatsappNumber, aboutText, instagram, facebookUrl, logoUrl, logoShape,
       whatsappIntro, whatsappClosing, storeAddress, helpText, faqText,
+      storePhotoUrl, aboutPageEnabled, promoBannerEnabled, promoBannerImage, promoBannerLink,
     });
   }
 
