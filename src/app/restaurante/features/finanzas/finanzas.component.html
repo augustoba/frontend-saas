@@ -1,0 +1,46 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Finanzas P&amp;L</h1>
+
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  <input type="date" [(ngModel)]="desde" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+  <span class="text-ink-muted">a</span>
+  <input type="date" [(ngModel)]="hasta" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+  <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="cargar()">
+    Actualizar
+  </button>
+</div>
+
+@if (reporteService.pyl(); as p) {
+  <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Ingresos</p>
+      <p class="mt-1 text-2xl font-semibold text-mint-500">$ {{ p.ingresos }}</p>
+    </div>
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Egresos</p>
+      <p class="mt-1 text-2xl font-semibold text-red-400">$ {{ p.egresos }}</p>
+    </div>
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Resultado</p>
+      <p class="mt-1 text-2xl font-semibold" [class]="p.resultado >= 0 ? 'text-mint-500' : 'text-red-400'">$ {{ p.resultado }}</p>
+    </div>
+  </div>
+
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <div class="border-b border-line px-4 py-3 text-sm font-medium text-ink">Egresos por categoría</div>
+    <table class="w-full text-sm">
+      <tbody>
+        @for (c of p.egresosPorCategoria; track c.etiqueta) {
+          <tr class="border-b border-line last:border-0">
+            <td class="px-4 py-2 text-ink">{{ c.etiqueta }}</td>
+            <td class="px-4 py-2 text-right text-ink">$ {{ c.total }}</td>
+          </tr>
+        }
+        @if (!p.egresosPorCategoria.length) {
+          <tr><td colspan="2" class="px-4 py-6 text-center text-ink-muted">Sin gastos pagados en el período.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <p class="text-ink-muted">Cargando…</p>
+}

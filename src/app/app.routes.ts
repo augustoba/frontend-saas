@@ -97,6 +97,21 @@ export const routes: Routes = [
     resolve: { order: orderResolver },
     title: 'Recibo',
   },
+  // Restaurante: carta pública y autopedido desde la mesa (QR), y la impresión
+  // de comandas/precuentas fuera del marco del panel.
+  {
+    path: 'carta/:slug',
+    loadComponent: () => import('./restaurante/features/carta-publica/carta-publica.component').then((m) => m.CartaPublicaComponent),
+  },
+  {
+    path: 'mesa/:token',
+    loadComponent: () => import('./restaurante/features/autopedido/autopedido.component').then((m) => m.AutopedidoComponent),
+  },
+  {
+    path: 'admin/restaurante/imprimir/:ordenId/:tipo',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./restaurante/features/imprimir-orden/imprimir-orden.component').then((m) => m.ImprimirOrdenComponent),
+  },
   {
     // Ticket del POS: fuera del marco del panel para que se imprima limpio.
     path: 'admin/pos/recibo/:id',
@@ -126,6 +141,10 @@ export const routes: Routes = [
       {
         path: 'pos',
         loadChildren: () => import('./pos/pos.routes').then((m) => m.POS_ROUTES),
+      },
+      {
+        path: 'restaurante',
+        loadChildren: () => import('./restaurante/restaurante.routes').then((m) => m.RESTAURANTE_ROUTES),
       },
       {
         path: '',

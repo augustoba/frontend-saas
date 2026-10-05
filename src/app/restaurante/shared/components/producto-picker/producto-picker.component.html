@@ -1,0 +1,55 @@
+<div class="fixed inset-0 z-40 bg-black/60" (click)="cerrado.emit()"></div>
+
+<div class="fixed inset-4 z-50 flex flex-col overflow-hidden rounded-xl bg-surface-2 shadow-2xl sm:inset-10">
+  <div class="flex items-center gap-3 border-b border-line p-4">
+    <input
+      type="text"
+      placeholder="Buscar en menú…"
+      class="flex-1 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+    />
+    <button type="button" class="text-ink-muted hover:text-ink" (click)="cerrado.emit()">✕</button>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+    <div class="w-44 shrink-0 overflow-y-auto border-r border-line p-2">
+      <button
+        type="button"
+        class="mb-1 w-full rounded-lg px-3 py-2 text-left text-sm"
+        [class]="categoriaActiva() === null ? 'bg-brand-600/20 text-brand-400' : 'text-ink-muted'"
+        (click)="elegirCategoria(null)"
+      >
+        Todas
+      </button>
+      @for (c of productoService.categorias(); track c.id) {
+        <button
+          type="button"
+          class="mb-1 w-full rounded-lg px-3 py-2 text-left text-sm"
+          [class]="categoriaActiva() === c.id ? 'bg-brand-600/20 text-brand-400' : 'text-ink-muted'"
+          (click)="elegirCategoria(c.id)"
+        >
+          {{ c.nombre }}
+        </button>
+      }
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        @for (p of productosFiltrados(); track p.id) {
+          <button
+            type="button"
+            class="rounded-lg border border-line bg-surface-3 p-3 text-left hover:border-brand-500"
+            (click)="elegir(p)"
+          >
+            <p class="text-sm font-medium text-ink">{{ p.nombre }}</p>
+            <p class="mt-1 text-sm text-brand-400">{{ p.precio ? ('$' + p.precio) : '-' }}</p>
+          </button>
+        }
+        @if (!productosFiltrados().length) {
+          <p class="col-span-full py-10 text-center text-ink-muted">No se encontraron productos.</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

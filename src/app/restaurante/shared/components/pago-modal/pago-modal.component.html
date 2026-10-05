@@ -1,0 +1,54 @@
+<div class="fixed inset-0 z-40 bg-black/60" (click)="cerrado.emit()"></div>
+
+<div class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-lg -translate-y-1/2 rounded-xl bg-surface-2 p-6 shadow-2xl">
+  <div class="mb-4 flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-ink">Cobrar</h2>
+    <button type="button" class="text-ink-muted hover:text-ink" (click)="cerrado.emit()">✕</button>
+  </div>
+
+  <p class="mb-1 text-sm text-ink-muted">Total</p>
+  <p class="mb-4 text-2xl font-bold text-brand-400">$ {{ total }}</p>
+
+  <p class="mb-2 text-sm font-medium text-ink">Medio de pago</p>
+  <div class="mb-4 grid grid-cols-2 gap-2">
+    @for (m of adminService.mediosPago(); track m.id) {
+      <button
+        type="button"
+        class="rounded-lg border-2 p-3 text-left text-sm"
+        [class]="medioPagoId() === m.id ? 'border-brand-500 bg-brand-600/10' : 'border-line'"
+        (click)="medioPagoId.set(m.id)"
+      >
+        <span class="text-ink">{{ m.nombre }}</span>
+      </button>
+    }
+  </div>
+
+  <label class="mb-3 block text-sm">
+    <span class="mb-1 block font-medium text-ink">Monto recibido</span>
+    <input
+      type="number"
+      class="w-full rounded-lg border border-line bg-surface-3 px-3 py-2 text-ink"
+      [ngModel]="monto()"
+      (ngModelChange)="monto.set($event)"
+    />
+  </label>
+
+  <label class="mb-4 block text-sm">
+    <span class="mb-1 block font-medium text-ink">Propina</span>
+    <input
+      type="number"
+      class="w-full rounded-lg border border-line bg-surface-3 px-3 py-2 text-ink"
+      [ngModel]="propina()"
+      (ngModelChange)="propina.set($event)"
+    />
+  </label>
+
+  <button
+    type="button"
+    class="w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+    [disabled]="!medioPagoId() || enviando()"
+    (click)="confirmar()"
+  >
+    {{ enviando() ? 'Procesando…' : 'Confirmar Pago' }}
+  </button>
+</div>

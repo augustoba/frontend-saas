@@ -1,0 +1,53 @@
+<div class="mb-4 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold text-ink">Cocina</h1>
+  <p class="text-xs text-ink-muted">Se actualiza solo cada 5 segundos</p>
+</div>
+
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  @for (orden of kdsService.ordenes(); track orden.ordenId) {
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div class="flex items-center justify-between border-b border-line bg-surface-3 px-4 py-3">
+        <span class="font-semibold text-ink">
+          {{ orden.tipo === 'MESA' ? 'Mesa ' + orden.mesaNombre : (orden.tipo === 'MOSTRADOR' ? 'Mostrador' : orden.tipo) + ' #' + orden.ordenId }}
+        </span>
+        <span
+          class="text-xs font-medium"
+          [class]="minutosTranscurridos(orden.fechaCreacion) >= 15 ? 'text-red-400' : 'text-ink-muted'"
+        >
+          {{ minutosTranscurridos(orden.fechaCreacion) }} min
+        </span>
+      </div>
+
+      <div class="divide-y divide-line">
+        @for (item of orden.items; track item.itemId) {
+          <div class="px-4 py-3">
+            <div class="flex items-start justify-between gap-2">
+              <p class="font-medium text-ink">{{ item.cantidad }}× {{ item.productoNombre }}</p>
+              <span
+                class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                [class]="item.estado === 'PENDIENTE' ? 'bg-surface-3 text-ink-muted' : item.estado === 'EN_PREPARACION' ? 'bg-amber-500/10 text-amber-400' : 'bg-mint-100 text-mint-600'"
+              >
+                {{ item.estado }}
+              </span>
+            </div>
+            @if (item.notas) {
+              <p class="mt-0.5 text-sm italic text-ink-muted">{{ item.notas }}</p>
+            }
+            <button
+              type="button"
+              class="mt-2 w-full rounded-lg bg-brand-600 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+              (click)="avanzar(item)"
+            >
+              {{ etiquetaAccion(item.estado) }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+  @if (!kdsService.ordenes().length) {
+    <div class="col-span-full rounded-xl border border-line bg-surface-2 px-4 py-10 text-center text-ink-muted">
+      No hay pedidos pendientes en cocina.
+    </div>
+  }
+</div>

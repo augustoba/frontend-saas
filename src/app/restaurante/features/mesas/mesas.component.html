@@ -1,0 +1,92 @@
+<div class="flex h-[calc(100vh-6.5rem)] gap-4">
+  <div class="flex-1 overflow-hidden">
+    <div class="mb-4 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold text-ink">Mesas</h1>
+      <button
+        type="button"
+        class="rounded-lg border border-line bg-surface-2 p-2 text-ink-muted hover:bg-surface-3"
+        (click)="mesaService.cargar()"
+      >
+        ↻
+      </button>
+    </div>
+
+    @if (mesaService.salones().length) {
+      <div class="mb-4 flex gap-1 rounded-lg bg-surface-3 p-1">
+        @for (item of mesaService.salones(); track item.salon.id) {
+          <button
+            type="button"
+            class="rounded-md px-4 py-2 text-sm font-medium transition"
+            [class.bg-surface-2]="esSalonActivo(item.salon.id)"
+            [class.shadow]="esSalonActivo(item.salon.id)"
+            [class.text-ink]="esSalonActivo(item.salon.id)"
+            [class.text-ink-muted]="!esSalonActivo(item.salon.id)"
+            (click)="elegirSalon(item.salon.id)"
+          >
+            {{ item.salon.nombre }}
+            <span class="ml-1 rounded-full bg-brand-600/20 px-1.5 text-xs text-brand-400">{{ item.mesas.length }}</span>
+          </button>
+        }
+      </div>
+
+      <p class="mb-4 text-sm text-ink-muted">Tocá una mesa para abrirla o ver su pedido.</p>
+
+      <div class="relative min-h-[420px] rounded-xl border border-line bg-surface p-4">
+        @for (mesa of salonActivo()?.mesas ?? []; track mesa.id) {
+          <button
+            type="button"
+            class="absolute flex items-center justify-center text-sm font-semibold text-white shadow transition"
+            [class.rounded-lg]="mesa.forma !== 'CIRCULAR'"
+            [class.rounded-full]="mesa.forma === 'CIRCULAR'"
+            [class.ring-2]="mesaSeleccionada()?.id === mesa.id"
+            [class.ring-white]="mesaSeleccionada()?.id === mesa.id"
+            [class]="colorMesa(mesa.estado)"
+            [style.left.px]="mesa.posX"
+            [style.top.px]="mesa.posY"
+            [style.width.px]="mesa.ancho"
+            [style.height.px]="mesa.alto"
+            (click)="seleccionarMesa(mesa)"
+          >
+            {{ mesa.nombre }}
+          </button>
+        }
+      </div>
+
+      <div class="mt-4 flex gap-4 text-sm text-ink-muted">
+        <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full bg-mint-500"></span>Libre</span>
+        <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full bg-red-500"></span>Ocupada</span>
+        <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-full bg-blue-500"></span>Esperando pago</span>
+      </div>
+    } @else if (mesaService.loading()) {
+      <p class="text-ink-muted">Cargando…</p>
+    } @else {
+      <p class="text-ink-muted">No hay salones cargados todavía.</p>
+    }
+  </div>
+
+  @if (mesaSeleccionada(); as mesa) {
+    <div class="w-96 shrink-0 overflow-hidden rounded-xl border border-line bg-surface-2">
+      @if (mesa.estado === 'LIBRE') {
+        <div class="flex h-full flex-col p-4">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="font-semibold text-ink">Mesa {{ mesa.nombre }}</h2>
+            <button type="button" class="text-ink-muted hover:text-ink" (click)="cerrarPanel()">✕</button>
+          </div>
+          <label class="mb-4 block text-sm">
+            <span class="mb-1 block font-medium text-ink">Comensales</span>
+            <div class="flex items-center gap-3">
+              <button type="button" class="h-8 w-8 rounded-lg bg-surface-3 text-ink" (click)="comensales.set(comensales() - 1)">−</button>
+              <span class="w-8 text-center text-ink">{{ comensales() }}</span>
+              <button type="button" class="h-8 w-8 rounded-lg bg-surface-3 text-ink" (click)="comensales.set(comensales() + 1)">+</button>
+            </div>
+          </label>
+          <button type="button" class="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700" (click)="abrirMesa()">
+            Abrir Mesa
+          </button>
+        </div>
+      } @else {
+        <app-orden-panel [titulo]="'Mesa ' + mesa.nombre" (cerrada)="cerrarPanel()" />
+      }
+    </div>
+  }
+</div>

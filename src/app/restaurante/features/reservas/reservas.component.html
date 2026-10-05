@@ -1,0 +1,170 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Reservas</h1>
+
+<div class="mb-4 flex gap-6 overflow-x-auto border-b border-line text-sm">
+  @for (t of [['reservas','Reservas'],['mapa-calor','Mapa de Calor'],['turnos','Turnos']]; track t[0]) {
+    <button
+      type="button"
+      class="shrink-0 border-b-2 px-1 pb-2 font-medium"
+      [class]="tab() === t[0] ? 'border-brand-500 text-brand-400' : 'border-transparent text-ink-muted'"
+      (click)="cambiarTab($any(t[0]))"
+    >
+      {{ t[1] }}
+    </button>
+  }
+</div>
+
+<!-- ===================== RESERVAS ===================== -->
+@if (tab() === 'reservas') {
+  <div class="mb-4 flex justify-end">
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="mostrarForm.set(!mostrarForm())">
+      + Agregar
+    </button>
+  </div>
+
+  @if (mostrarForm()) {
+    <div class="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-4 sm:grid-cols-5">
+      <select [(ngModel)]="salonId" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink">
+        <option [ngValue]="null">Salón…</option>
+        @for (s of mesaService.salones(); track s.salon.id) {
+          <option [ngValue]="s.salon.id">{{ s.salon.nombre }}</option>
+        }
+      </select>
+      <input [(ngModel)]="nombreCliente" placeholder="Nombre del cliente" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input [(ngModel)]="telefonoCliente" placeholder="Teléfono" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input type="time" [(ngModel)]="hora" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input type="number" [(ngModel)]="cantidadPersonas" placeholder="Personas" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <button type="button" class="col-span-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 sm:col-span-1" (click)="guardar()">
+        Guardar
+      </button>
+    </div>
+  }
+
+  <div class="mb-4 flex items-center gap-2">
+    <button type="button" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-ink" (click)="cambiarFecha(-1)">‹</button>
+    <input type="date" [(ngModel)]="fecha" (ngModelChange)="reservaService.cargar(fecha)" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+    <button type="button" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-ink" (click)="cambiarFecha(1)">›</button>
+  </div>
+
+  @if (reservaService.capacidad(); as cap) {
+    <div class="mb-4 rounded-xl border border-line bg-surface-3 p-4">
+      <p class="mb-2 text-xs font-medium uppercase text-ink-muted">Capacidad de reserva — {{ cap.total }} personas</p>
+      <div class="flex flex-wrap gap-2">
+        @for (s of cap.porSalon; track s.salonId) {
+          <span class="rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-ink">{{ s.salonNombre }} {{ s.capacidadReservable }}</span>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    @if (reservaService.items().length) {
+      @for (r of reservaService.items(); track r.id) {
+        <div class="flex items-center gap-3 border-b border-line px-4 py-3 last:border-0 text-sm">
+          <span class="w-14 font-medium text-ink">{{ r.hora || '—' }}</span>
+          <span class="flex-1 text-ink">
+            {{ r.nombreCliente }}
+            <span class="text-ink-muted"> · {{ r.salonNombre }} · {{ r.cantidadPersonas }}p</span>
+          </span>
+          <span class="rounded-full bg-surface-3 px-2 py-0.5 text-xs font-medium text-ink-muted">{{ r.estado }}</span>
+        </div>
+      }
+    } @else {
+      <p class="px-4 py-10 text-center text-ink-muted">No se encontraron reservas</p>
+    }
+  </div>
+}
+
+<!-- ===================== MAPA DE CALOR ===================== -->
+@if (tab() === 'mapa-calor') {
+  <div class="mb-4 flex items-center gap-2">
+    <button type="button" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-ink" (click)="cambiarFecha(-1)">‹</button>
+    <input type="date" [(ngModel)]="fecha" (ngModelChange)="reservaService.cargarMapaCalor(fecha)" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+    <button type="button" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-ink" (click)="cambiarFecha(1)">›</button>
+    <span class="ml-2 text-xs text-ink-muted">Personas reservadas por hora y salón</span>
+  </div>
+
+  @if (reservaService.mapaCalor(); as mapa) {
+    <div class="overflow-x-auto rounded-xl border border-line bg-surface-2 p-4">
+      <table class="w-full text-xs">
+        <thead>
+          <tr>
+            <th class="px-2 py-1 text-left text-ink-muted">Salón</th>
+            @for (h of mapa.horas; track h) {
+              <th class="px-1 py-1 text-center text-ink-muted">{{ h }}h</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of mapa.filas; track fila.salonId) {
+            <tr>
+              <td class="px-2 py-1 font-medium text-ink">{{ fila.salonNombre }}</td>
+              @for (h of mapa.horas; track h) {
+                <td class="px-1 py-1">
+                  <div
+                    class="flex h-8 w-8 items-center justify-center rounded text-[11px] font-medium text-white"
+                    [class]="intensidadColor(fila.personasPorHora[h] ?? 0)"
+                    [title]="(fila.personasPorHora[h] ?? 0) + ' personas a las ' + h + 'h'"
+                  >
+                    {{ (fila.personasPorHora[h] ?? 0) || '' }}
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="px-4 py-10 text-center text-ink-muted">Cargando mapa de calor…</p>
+  }
+}
+
+<!-- ===================== TURNOS ===================== -->
+@if (tab() === 'turnos') {
+  <div class="mb-4 flex justify-end">
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="nuevoTurno()">
+      + Agregar Turno
+    </button>
+  </div>
+
+  @if (mostrarForm()) {
+    <div class="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-4 sm:grid-cols-4">
+      <input [(ngModel)]="turnoNombre" placeholder="Nombre (ej., Almuerzo)" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input type="time" [(ngModel)]="turnoHoraInicio" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input type="time" [(ngModel)]="turnoHoraFin" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input type="number" [(ngModel)]="turnoCapacidadMaxima" placeholder="Capacidad máxima" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 sm:col-span-4" (click)="guardarTurno()">
+        {{ turnoEditando() ? 'Guardar Cambios' : 'Agregar Turno' }}
+      </button>
+    </div>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted">
+        <tr>
+          <th class="px-4 py-3 font-medium">Nombre</th>
+          <th class="px-4 py-3 font-medium">Horario</th>
+          <th class="px-4 py-3 font-medium">Capacidad máxima</th>
+          <th class="px-4 py-3 font-medium">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of reservaService.turnos(); track t.id) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-ink">{{ t.nombre }}</td>
+            <td class="px-4 py-3 text-ink-muted">{{ t.horaInicio }} – {{ t.horaFin }}</td>
+            <td class="px-4 py-3 text-ink">{{ t.capacidadMaxima }}</td>
+            <td class="px-4 py-3">
+              <button type="button" class="mr-3 text-xs font-medium text-brand-400 hover:underline" (click)="editarTurno(t)">Editar</button>
+              <button type="button" class="text-xs font-medium text-ink-muted hover:underline" (click)="archivarTurno(t)">Archivar</button>
+            </td>
+          </tr>
+        }
+        @if (!reservaService.turnos().length) {
+          <tr><td colspan="4" class="px-4 py-6 text-center text-ink-muted">Sin turnos de reserva todavía.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

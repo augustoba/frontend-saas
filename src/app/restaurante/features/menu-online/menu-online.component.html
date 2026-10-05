@@ -1,0 +1,270 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Menú Online</h1>
+
+<div class="mb-4 flex gap-6 overflow-x-auto border-b border-line text-sm">
+  @for (t of [['configuracion','Configuración'],['analiticas','Analíticas'],['comentarios','Comentarios']]; track t[0]) {
+    <button
+      type="button"
+      class="shrink-0 border-b-2 px-1 pb-2 font-medium"
+      [class]="tab() === t[0] ? 'border-brand-500 text-brand-400' : 'border-transparent text-ink-muted'"
+      (click)="cambiarTab($any(t[0]))"
+    >
+      {{ t[1] }}
+    </button>
+  }
+</div>
+
+@if (tab() === 'analiticas') {
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted">
+        <tr>
+          <th class="px-4 py-3 font-medium">Producto</th>
+          <th class="px-4 py-3 font-medium">Vistas</th>
+          <th class="px-4 py-3 font-medium">Me gusta</th>
+          <th class="px-4 py-3 font-medium">Comentarios</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of menuOnlineService.analiticas(); track a.productoId) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-ink">{{ a.productoNombre }}</td>
+            <td class="px-4 py-3 text-ink">{{ a.vistas }}</td>
+            <td class="px-4 py-3 text-ink">❤ {{ a.likes }}</td>
+            <td class="px-4 py-3 text-ink">{{ a.comentarios }}</td>
+          </tr>
+        }
+        @if (!menuOnlineService.analiticas().length) {
+          <tr><td colspan="4" class="px-4 py-6 text-center text-ink-muted">Todavía no hay vistas registradas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (tab() === 'comentarios') {
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted">
+        <tr>
+          <th class="px-4 py-3 font-medium">Producto</th>
+          <th class="px-4 py-3 font-medium">Cliente</th>
+          <th class="px-4 py-3 font-medium">Comentario</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of menuOnlineService.comentariosAdmin(); track c.id) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-brand-400">{{ c.productoNombre }}</td>
+            <td class="px-4 py-3 text-ink">{{ c.nombreCliente }}</td>
+            <td class="px-4 py-3 text-ink-muted">{{ c.texto }}</td>
+            <td class="px-4 py-3 text-right">
+              <button type="button" class="text-xs font-medium text-ink-muted hover:underline" (click)="eliminarComentario(c.id)">Eliminar</button>
+            </td>
+          </tr>
+        }
+        @if (!menuOnlineService.comentariosAdmin().length) {
+          <tr><td colspan="4" class="px-4 py-6 text-center text-ink-muted">Todavía no hay comentarios.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (tab() === 'configuracion') {
+<div class="mb-4 rounded-xl border border-line bg-surface-2 p-4">
+  <h2 class="font-semibold text-ink">Compartir el menú</h2>
+  <p class="mb-3 text-sm text-ink-muted">Mostralo en el local, en redes o en cualquier mensaje.</p>
+
+  <div class="mb-3 rounded-lg bg-surface-3 px-3 py-2 font-mono text-xs text-ink-muted">{{ publicUrl }}</div>
+
+  <div class="flex gap-3">
+    <button type="button" class="flex-1 rounded-lg border border-line bg-surface-3 py-2 text-sm font-medium text-ink" (click)="copiarLink()">
+      Copiar
+    </button>
+    <a [href]="publicUrl" target="_blank" class="flex-1 rounded-lg border border-line py-2 text-center text-sm font-medium text-ink">
+      Ver menú ↗
+    </a>
+  </div>
+  <p class="mb-4 text-xs text-ink-muted">Compartí este link con tus clientes para que puedan ver tu menú online.</p>
+
+  @if (qrDataUrl(); as qr) {
+    <div class="flex items-center gap-4">
+      <img [src]="qr" alt="Código QR del menú" class="h-24 w-24 rounded-lg border border-line" />
+      <button type="button" class="text-sm font-medium text-brand-400 underline" (click)="descargarQr()">
+        ↓ Descargar Código QR
+      </button>
+    </div>
+  }
+</div>
+
+<div class="mb-4 rounded-xl border border-line bg-surface-2 p-4">
+  <h2 class="font-semibold text-ink">Identidad</h2>
+  <p class="mb-3 text-sm text-ink-muted">Logo y banner para personalizar tu carta.</p>
+
+  <p class="mb-4 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-400">
+    Las cargas de imágenes están desactivadas para este local. Contactanos para activarlas.
+  </p>
+
+  <p class="mb-2 text-sm font-medium text-ink">Forma del logo</p>
+  <div class="flex gap-3">
+    <button
+      type="button"
+      class="h-12 w-12 rounded-lg border-2"
+      [class.border-brand-500]="formaLogo === 'CIRCULAR'"
+      [class.border-line]="formaLogo !== 'CIRCULAR'"
+      (click)="formaLogo = 'CIRCULAR'"
+    >
+      <span class="mx-auto block h-6 w-6 rounded-full bg-brand-600"></span>
+    </button>
+    <button
+      type="button"
+      class="h-12 w-12 rounded-lg border-2"
+      [class.border-brand-500]="formaLogo === 'CUADRADA'"
+      [class.border-line]="formaLogo !== 'CUADRADA'"
+      (click)="formaLogo = 'CUADRADA'"
+    >
+      <span class="mx-auto block h-6 w-6 rounded bg-surface-3"></span>
+    </button>
+  </div>
+</div>
+
+<div class="mb-4 rounded-xl border border-line bg-surface-2 p-4">
+  <h2 class="mb-3 font-semibold text-ink">Diseño</h2>
+
+  <p class="mb-2 text-sm font-medium text-ink">Layout</p>
+  <div class="mb-4 grid grid-cols-3 gap-3">
+    @for (l of [{v: 'LISTA', t: 'Lista', d: 'Lista densa, ideal para cartas extensas.'}, {v: 'CARTA', t: 'Carta', d: 'Una sola columna, estilo carta impresa.'}, {v: 'GALERIA', t: 'Galería', d: 'Imágenes grandes, foco visual.'}]; track l.v) {
+      <button
+        type="button"
+        class="rounded-lg border-2 p-3 text-left text-sm"
+        [class.border-brand-500]="layout === l.v"
+        [class]="layout === l.v ? 'bg-brand-600/10' : ''"
+        [class.border-line]="layout !== l.v"
+        (click)="layout = $any(l.v)"
+      >
+        <!-- Miniatura -->
+        <div class="mb-2 space-y-1.5 rounded-md bg-surface-3 p-2">
+          @if (l.v === 'LISTA') {
+            @for (r of [1,2,3]; track r) {
+              <div class="flex items-center gap-1.5">
+                <div class="h-1.5 flex-1 rounded-full bg-ink-muted/40"></div>
+                <div class="h-2.5 w-2.5 rounded-sm bg-ink-muted/40"></div>
+              </div>
+            }
+          } @else if (l.v === 'CARTA') {
+            @for (r of [1,2,3]; track r) {
+              <div class="flex items-center gap-1">
+                <div class="h-1 w-1 rounded-full bg-ink-muted/50"></div>
+                <div class="h-1.5 flex-1 rounded-full bg-ink-muted/40"></div>
+                <div class="h-1.5 w-2 rounded-full bg-ink-muted/40"></div>
+              </div>
+            }
+          } @else {
+            <div class="grid grid-cols-1 gap-1.5">
+              @for (r of [1,2]; track r) {
+                <div>
+                  <div class="mb-1 h-6 rounded bg-ink-muted/40"></div>
+                  <div class="h-1 w-3/4 rounded-full bg-ink-muted/40"></div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <p class="font-medium text-ink">{{ l.t }}</p>
+        <p class="text-xs text-ink-muted">{{ l.d }}</p>
+      </button>
+    }
+  </div>
+
+  <p class="mb-2 text-sm font-medium text-ink">Columnas (máx.)</p>
+  <div class="mb-4 flex gap-2">
+    @for (n of [2, 3, 4]; track n) {
+      <button
+        type="button"
+        class="rounded-lg px-4 py-1.5 text-sm font-medium"
+        [class.bg-brand-600]="columnasMax === n"
+        [class.text-white]="columnasMax === n"
+        [class.bg-surface-3]="columnasMax !== n"
+        [class.text-ink-muted]="columnasMax !== n"
+        (click)="columnasMax = n"
+      >
+        {{ n }}
+      </button>
+    }
+  </div>
+
+  <p class="mb-2 text-sm font-medium text-ink">Tipografía</p>
+  <div class="grid grid-cols-2 gap-3">
+    @for (t of [{v: 'MODERNA', d: 'Geométrica, limpia y contemporánea.'}, {v: 'CLASICA', d: 'Serif elegante de alto contraste.'}, {v: 'RELAJADA', d: 'Redondeada y ligera, de aire informal.'}, {v: 'AUDAZ', d: 'Geométrica y expresiva, editorial.'}]; track t.v) {
+      <button
+        type="button"
+        class="rounded-lg border-2 p-3 text-left text-sm"
+        [class.border-brand-500]="tipografia === t.v"
+        [class.border-line]="tipografia !== t.v"
+        (click)="tipografia = $any(t.v)"
+      >
+        <p class="font-medium text-ink">{{ t.v | titlecase }}</p>
+        <p class="text-xs text-ink-muted">{{ t.d }}</p>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="mb-4 rounded-xl border border-line bg-surface-2 p-4">
+  <h2 class="mb-3 font-semibold text-ink">Contenido</h2>
+
+  <label class="mb-4 block text-sm">
+    <span class="mb-1 block font-medium text-ink">Encabezado del Menú</span>
+    <textarea
+      [(ngModel)]="encabezadoTexto"
+      rows="2"
+      placeholder="ej. ¡Bienvenidos a nuestro restaurante! Conocé nuestras especialidades del día."
+      class="w-full rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink"
+    ></textarea>
+  </label>
+
+  <label class="mb-3 flex items-center justify-between">
+    <span class="text-sm text-ink">Mostrar descripciones</span>
+    <input type="checkbox" [(ngModel)]="mostrarDescripciones" />
+  </label>
+  <label class="flex items-center justify-between">
+    <span class="text-sm text-ink">Mostrar dirección</span>
+    <input type="checkbox" [(ngModel)]="mostrarDireccion" />
+  </label>
+</div>
+
+<div class="mb-4 rounded-xl border border-line bg-surface-2 p-4">
+  <h2 class="mb-1 font-semibold text-ink">Redes Sociales</h2>
+  <p class="mb-3 text-sm text-ink-muted">
+    Agregá "google" con el link de reseñas de tu local para mostrar el botón "Dejanos tu reseña en Google" en la carta pública.
+  </p>
+
+  <div class="mb-3 space-y-2">
+    @for (r of redesSociales; track $index) {
+      <div class="flex items-center justify-between rounded-lg bg-surface-3 px-3 py-2 text-sm">
+        <span class="text-ink"><span class="font-medium">{{ r.plataforma }}</span> — {{ r.url }}</span>
+        <button type="button" class="text-xs font-medium text-ink-muted hover:underline" (click)="quitarRedSocial($index)">Quitar</button>
+      </div>
+    }
+    @if (!redesSociales.length) {
+      <p class="text-sm text-ink-muted">Sin redes sociales cargadas todavía.</p>
+    }
+  </div>
+
+  <div class="flex gap-2">
+    <input [(ngModel)]="nuevaRedPlataforma" placeholder="Plataforma (ej. google, instagram)" class="w-48 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+    <input [(ngModel)]="nuevaRedUrl" placeholder="URL" class="flex-1 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="agregarRedSocial()">Agregar</button>
+  </div>
+</div>
+
+<button
+  type="button"
+  class="w-full rounded-lg bg-brand-600 py-3 font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+  [disabled]="guardando()"
+  (click)="guardar()"
+>
+  {{ guardado() ? '✓ Guardado' : guardando() ? 'Guardando…' : 'Guardar Configuración' }}
+</button>
+}

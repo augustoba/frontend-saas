@@ -37,6 +37,43 @@ interface NavGroup {
 
 const GROUPS: NavGroup[] = [
   {
+    id: 'salon',
+    label: 'Salón y cocina',
+    icon: '🍽️',
+    items: [
+      { path: '/admin/restaurante/mesas', label: 'Mesas', permission: 'MESA_ABRIR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/mostrador', label: 'Mostrador', permission: 'ORDEN_CREAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/cocina', label: 'Cocina (KDS)', permission: 'KDS_OPERAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/comandas', label: 'Comandas', permission: 'KDS_OPERAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/solicitudes', label: 'Pedidos de las mesas', permission: 'SOLICITUD_MESA_ATENDER', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/pedidos-online', label: 'Pedidos online', permission: 'ORDEN_CREAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/reservas', label: 'Reservas', permission: 'RESERVA_VER', sistemas: ['RESTAURANTE'] },
+    ],
+  },
+  {
+    id: 'resto-caja',
+    label: 'Caja y finanzas',
+    icon: '💵',
+    items: [
+      { path: '/admin/restaurante/caja', label: 'Caja', permission: 'CAJA_VER_ARQUEO', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/ventas', label: 'Ventas', permission: 'REPORTE_VENTAS', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/gastos', label: 'Gastos', permission: 'GASTO_VER', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/finanzas', label: 'Finanzas', permission: 'REPORTE_PYL', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/clientes', label: 'Clientes', permission: 'CLIENTE_VER', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/proveedores', label: 'Proveedores', permission: 'PROVEEDOR_VER', sistemas: ['RESTAURANTE'] },
+    ],
+  },
+  {
+    id: 'resto-carta',
+    label: 'Carta',
+    icon: '📋',
+    items: [
+      { path: '/admin/restaurante/productos', label: 'Productos', permission: 'PRODUCTO_EDITAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/menu-online', label: 'Carta online', permission: 'MENU_ONLINE_CONFIGURAR', sistemas: ['RESTAURANTE'] },
+      { path: '/admin/restaurante/configuracion', label: 'Salones, cajas y más', permission: 'ADMIN_CONFIGURAR', sistemas: ['RESTAURANTE'] },
+    ],
+  },
+  {
     id: 'pos',
     label: 'Punto de venta',
     icon: '🧾',

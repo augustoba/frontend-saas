@@ -1,0 +1,112 @@
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-ink">Cocina</h1>
+    <p class="text-xs text-ink-muted">Comandas confirmadas — de mesa, mostrador y pedidos online</p>
+  </div>
+  <p class="text-xs text-ink-muted">Se actualiza solo cada 5 segundos</p>
+</div>
+
+<div class="mb-4 flex gap-6 border-b border-line text-sm">
+  <button
+    type="button"
+    class="border-b-2 px-1 pb-2 font-medium"
+    [class.border-brand-500]="tab() === 'preparacion'"
+    [class.text-brand-400]="tab() === 'preparacion'"
+    [class.border-transparent]="tab() !== 'preparacion'"
+    [class.text-ink-muted]="tab() !== 'preparacion'"
+    (click)="tab.set('preparacion')"
+  >
+    En preparación ({{ enPreparacion().length }})
+  </button>
+  <button
+    type="button"
+    class="border-b-2 px-1 pb-2 font-medium"
+    [class.border-brand-500]="tab() === 'finalizadas'"
+    [class.text-brand-400]="tab() === 'finalizadas'"
+    [class.border-transparent]="tab() !== 'finalizadas'"
+    [class.text-ink-muted]="tab() !== 'finalizadas'"
+    (click)="tab.set('finalizadas')"
+  >
+    Finalizadas ({{ finalizadas().length }})
+  </button>
+</div>
+
+@if (tab() === 'preparacion') {
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (o of enPreparacion(); track o.id) {
+      <div
+        class="overflow-hidden rounded-xl border-2 bg-surface-2"
+        [class.border-red-500]="urgencia(o) === 'sin-tomar'"
+        [class.border-mint-500]="urgencia(o) === 'tomado'"
+        [class.border-amber-500]="urgencia(o) === 'demorada'"
+      >
+        <div class="border-b border-line bg-surface-3 px-4 py-3">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-ink">{{ origen(o) }}</p>
+            <span
+              class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+              [class.bg-red-500]="urgencia(o) === 'sin-tomar'"
+              [class.text-white]="urgencia(o) === 'sin-tomar' || urgencia(o) === 'demorada'"
+              [class.bg-mint-100]="urgencia(o) === 'tomado'"
+              [class.text-mint-600]="urgencia(o) === 'tomado'"
+              [class.bg-amber-500]="urgencia(o) === 'demorada'"
+            >
+              {{ urgencia(o) === 'sin-tomar' ? 'Sin tomar' : urgencia(o) === 'demorada' ? 'Demorada' : 'Tomado' }}
+            </span>
+          </div>
+          <p class="mt-1 text-xs font-medium text-brand-400">🙋 Retira/avisar: {{ avisarA(o) }}</p>
+        </div>
+        <div class="divide-y divide-line px-4">
+          @for (item of o.items; track item.id) {
+            <p class="py-2 text-sm text-ink">
+              {{ item.cantidad }}× {{ item.productoNombre }}
+              @if (item.notas) {
+                <span class="text-xs italic text-ink-muted"> · {{ item.notas }}</span>
+              }
+            </p>
+          }
+        </div>
+        <div class="flex items-center justify-end px-4 py-3">
+          @if (o.estadoPreparacion === 'SIN_TOMAR') {
+            <button type="button" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700" (click)="tomar(o)">
+              Marcar Tomado
+            </button>
+          } @else {
+            <button type="button" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700" (click)="finalizar(o)">
+              Marcar Finalizada
+            </button>
+          }
+        </div>
+      </div>
+    }
+    @if (!enPreparacion().length) {
+      <div class="col-span-full rounded-xl border border-line bg-surface-2 px-4 py-10 text-center text-ink-muted">
+        No hay comandas en preparación.
+      </div>
+    }
+  </div>
+} @else {
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (o of finalizadas(); track o.id) {
+      <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+        <div class="border-b border-line bg-surface-3 px-4 py-3">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-ink">{{ origen(o) }}</p>
+            <span class="shrink-0 rounded-full bg-mint-100 px-2 py-0.5 text-xs font-medium text-mint-600">Lista</span>
+          </div>
+          <p class="mt-1 text-xs font-medium text-brand-400">🙋 Avisar a: {{ avisarA(o) }} — retirar</p>
+        </div>
+        <div class="flex items-center justify-end px-4 py-3">
+          <button type="button" class="rounded-lg bg-mint-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-90" (click)="entregar(o)">
+            Marcar Entregado
+          </button>
+        </div>
+      </div>
+    }
+    @if (!finalizadas().length) {
+      <div class="col-span-full rounded-xl border border-line bg-surface-2 px-4 py-10 text-center text-ink-muted">
+        No hay comandas finalizadas esperando retiro.
+      </div>
+    }
+  </div>
+}

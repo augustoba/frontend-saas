@@ -1,0 +1,141 @@
+<div class="mb-4 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold text-ink">Administración de Cajas</h1>
+  @if (tab() === 'arqueos') {
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="mostrarForm.set(!mostrarForm())">
+      + Nuevo Arqueo
+    </button>
+  }
+</div>
+
+<div class="mb-4 flex gap-6 border-b border-line text-sm">
+  @for (t of [['arqueos','Arqueos'],['movimientos','Movimientos'],['cajas','Cajas']]; track t[0]) {
+    <button
+      type="button"
+      class="border-b-2 px-1 pb-2 font-medium"
+      [class.border-brand-500]="tab() === t[0]"
+      [class.text-brand-400]="tab() === t[0]"
+      [class.border-transparent]="tab() !== t[0]"
+      [class.text-ink-muted]="tab() !== t[0]"
+      (click)="cambiarTab($any(t[0]))"
+    >
+      {{ t[1] }}
+    </button>
+  }
+</div>
+
+@if (tab() === 'arqueos') {
+  @if (mostrarForm()) {
+    <div class="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-4 sm:grid-cols-3">
+      <select [(ngModel)]="cajaSeleccionada" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink">
+        <option [ngValue]="null">Elegir caja…</option>
+        @for (c of cajaService.cajas(); track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+      <input type="number" [(ngModel)]="montoApertura" placeholder="Monto de apertura" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="abrirArqueo()">Abrir</button>
+    </div>
+  }
+
+  <h2 class="mb-2 text-sm font-medium text-ink-muted">Arqueos abiertos</h2>
+  @if (cajaService.arqueosAbiertos().length) {
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      @for (a of cajaService.arqueosAbiertos(); track a.id) {
+        <div class="rounded-xl border p-4" [class]="ordenService.cajaActivaId() === a.id ? 'border-brand-500 bg-surface-2' : 'border-line bg-surface-2'">
+          <div class="flex items-start justify-between">
+            <p class="font-semibold text-ink">{{ a.cajaNombre }}</p>
+            @if (ordenService.cajaActivaId() === a.id) {
+              <span class="rounded-full bg-brand-600/20 px-2 py-0.5 text-[11px] font-medium text-brand-400">Caja activa</span>
+            }
+          </div>
+          <p class="text-sm text-ink-muted">{{ a.usuarioAperturaNombre }}</p>
+          <p class="mb-3 text-xs text-ink-muted">Apertura: {{ a.fechaApertura | date: 'short' }}</p>
+          <p class="text-xs uppercase text-ink-muted">Ventas</p>
+          <p class="mb-2 text-xl font-bold text-brand-400">$ {{ a.totalVentas }}</p>
+          <p class="text-xs uppercase text-ink-muted">Efectivo en caja</p>
+          <p class="mb-3 text-xl font-bold text-ink">$ {{ a.efectivoEnCaja }}</p>
+          <button
+            type="button"
+            class="w-full rounded-lg border border-line py-1.5 text-xs font-medium text-ink hover:border-brand-500"
+            (click)="elegirCajaActiva(a)"
+          >
+            {{ ordenService.cajaActivaId() === a.id ? 'Dejar de usar' : 'Usar esta caja' }}
+          </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="mb-6 text-ink-muted">No hay arqueos abiertos.</p>
+  }
+
+  <h2 class="mb-2 text-sm font-medium text-ink-muted">Historial de arqueos</h2>
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted">
+        <tr><th class="px-4 py-3 font-medium">Apertura</th><th class="px-4 py-3 font-medium">Cierre</th><th class="px-4 py-3 font-medium">Caja</th><th class="px-4 py-3 font-medium">Estado</th></tr>
+      </thead>
+      <tbody>
+        @for (a of cajaService.historial(); track a.id) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-ink">{{ a.fechaApertura | date: 'short' }}</td>
+            <td class="px-4 py-3 text-ink">{{ a.fechaCierre ? (a.fechaCierre | date: 'short') : '—' }}</td>
+            <td class="px-4 py-3 text-ink">{{ a.cajaNombre }}</td>
+            <td class="px-4 py-3">
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium" [class.bg-mint-100]="a.estado === 'ABIERTO'" [class.text-mint-600]="a.estado === 'ABIERTO'" [class.bg-surface-3]="a.estado === 'CERRADO'" [class.text-ink-muted]="a.estado === 'CERRADO'">
+                {{ a.estado }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (tab() === 'movimientos') {
+  <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-xs uppercase text-ink-muted">Registros</p>
+      <p class="text-xl font-bold text-ink">{{ cajaService.movimientos().length }}</p>
+    </div>
+  </div>
+  @if (cajaService.movimientos().length) {
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      @for (m of cajaService.movimientos(); track m.id) {
+        <div class="flex items-center gap-3 border-b border-line px-4 py-3 last:border-0 text-sm">
+          <span class="flex-1 text-ink">{{ m.tipo }} — {{ m.descripcion || 'Sin descripción' }}</span>
+          <span class="font-medium text-ink">$ {{ m.monto }}</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="text-ink-muted">No hay movimientos de caja registrados.</p>
+  }
+}
+
+@if (tab() === 'cajas') {
+  <div class="mb-4 flex justify-end">
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="mostrarForm.set(!mostrarForm())">
+      + Nueva Caja
+    </button>
+  </div>
+  @if (mostrarForm()) {
+    <div class="mb-4 flex gap-3 rounded-xl border border-line bg-surface-2 p-4">
+      <input [(ngModel)]="nombreCaja" placeholder="Nombre de la caja" class="flex-1 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="guardarCaja()">Guardar</button>
+    </div>
+  }
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted"><tr><th class="px-4 py-3 font-medium">Nombre</th><th class="px-4 py-3 font-medium">Estado</th></tr></thead>
+      <tbody>
+        @for (c of cajaService.cajas(); track c.id) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-ink">{{ c.nombre }}</td>
+            <td class="px-4 py-3"><span class="rounded-full bg-mint-100 px-2 py-0.5 text-xs font-medium text-mint-600">{{ c.activo ? 'Activo' : 'Inactivo' }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

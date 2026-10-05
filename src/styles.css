@@ -14,6 +14,13 @@
 @custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
 
 @theme {
+  /* Tema oscuro del restaurante (calcado de Restolia): sólo lo usan sus pantallas. */
+  --color-surface: #121114;
+  --color-surface-2: #1b1a1e;
+  --color-surface-3: #26252a;
+  --color-ink: #f2f1f4;
+  --color-ink-muted: #9d9ba3;
+  --color-line: #322f36;
   /* Paleta pensada para un ecommerce de ropa infantil: cálida, alegre, no corporativa */
   --color-brand-50: #fff7ed;
   --color-brand-100: #ffedd5;

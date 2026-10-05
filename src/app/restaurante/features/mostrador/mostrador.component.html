@@ -1,0 +1,40 @@
+<div class="flex h-[calc(100vh-6.5rem)] gap-4">
+  <div class="flex-1 overflow-hidden">
+    <div class="mb-4 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold text-ink">Mostrador</h1>
+      <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="nuevoPedido()">
+        + Nuevo Pedido
+      </button>
+    </div>
+
+    @if (abiertas().length) {
+      <div class="mb-4 flex gap-2 overflow-x-auto">
+        @for (o of abiertas(); track o.id) {
+          <button
+            type="button"
+            class="shrink-0 rounded-lg px-4 py-2 text-sm font-medium"
+            [class.bg-brand-600]="ordenService.ordenActual()?.id === o.id"
+            [class.text-white]="ordenService.ordenActual()?.id === o.id"
+            [class.bg-surface-3]="ordenService.ordenActual()?.id !== o.id"
+            [class.text-ink-muted]="ordenService.ordenActual()?.id !== o.id"
+            (click)="elegirOrden(o.id)"
+          >
+            Orden #{{ o.id }} · $ {{ o.total }}
+          </button>
+        }
+      </div>
+    }
+
+    @if (!ordenService.ordenActual()) {
+      <div class="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-line text-ink-muted">
+        No hay ningún pedido en curso. Creá uno con "Nuevo Pedido".
+      </div>
+    }
+  </div>
+
+  @if (ordenService.ordenActual()) {
+    <div class="w-96 shrink-0 overflow-hidden rounded-xl border border-line bg-surface-2">
+      <app-orden-panel titulo="Mostrador" (cerrada)="onCerrada()" />
+    </div>
+  }
+</div>

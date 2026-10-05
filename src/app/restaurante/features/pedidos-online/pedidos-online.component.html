@@ -1,0 +1,70 @@
+<div class="mb-4 flex items-center justify-between">
+  <h1 class="text-2xl font-semibold text-ink">Pedidos Online</h1>
+  <p class="text-xs text-ink-muted">Se actualiza solo cada 8 segundos</p>
+</div>
+
+<div class="mb-6 rounded-xl border border-line bg-surface-2 p-4">
+  <p class="mb-2 text-sm font-medium text-ink">Link para pedir por WhatsApp</p>
+  <p class="mb-3 text-xs text-ink-muted">
+    Pasále este link al cliente (por WhatsApp, redes, donde sea) — ahí elige los productos y al confirmar le abre
+    WhatsApp con el pedido armado, listo para mandarte.
+  </p>
+  <div class="flex flex-wrap items-center gap-2">
+    <input type="text" readonly [value]="publicUrl" class="min-w-0 flex-1 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink-muted" />
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="copiarLink()">
+      {{ copiado() ? '✓ Copiado' : 'Copiar link' }}
+    </button>
+    <a [href]="publicUrl" target="_blank" rel="noopener" class="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-muted hover:border-brand-500 hover:text-ink">
+      Abrir ↗
+    </a>
+    <button type="button" class="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-muted hover:border-brand-500 hover:text-ink" (click)="mostrarVistaPrevia.set(!mostrarVistaPrevia())">
+      {{ mostrarVistaPrevia() ? 'Ocultar vista previa' : 'Ver vista previa' }}
+    </button>
+  </div>
+
+  @if (mostrarVistaPrevia()) {
+    <div class="mt-4 flex justify-center">
+      <div class="overflow-hidden rounded-2xl border-4 border-surface-3 bg-white shadow-lg" style="width: 320px; height: 600px;">
+        <iframe [src]="previewUrl" title="Vista previa de la carta pública" class="h-full w-full border-0"></iframe>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  @for (o of pedidoOnlineService.pendientes(); track o.id) {
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div class="border-b border-line bg-surface-3 px-4 py-3">
+        <p class="font-semibold text-ink">{{ o.tipo === 'DELIVERY' ? '🛵 Envío' : '🛍 Retiro' }} — {{ o.nombreClienteOnline }}</p>
+        <p class="text-xs text-ink-muted">📞 {{ o.telefonoClienteOnline }}</p>
+        @if (o.direccionEntrega) {
+          <p class="text-xs text-ink-muted">📍 {{ o.direccionEntrega }}</p>
+        }
+        @if (o.costoEnvio) {
+          <p class="text-xs text-ink-muted">🚚 Envío: $ {{ o.costoEnvio }}</p>
+        }
+      </div>
+      <div class="divide-y divide-line px-4">
+        @for (item of o.items; track item.id) {
+          <p class="py-2 text-sm text-ink">{{ item.cantidad }}× {{ item.productoNombre }}</p>
+        }
+      </div>
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="font-semibold text-ink">$ {{ o.total }}</span>
+        <div class="flex gap-2">
+          <button type="button" class="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-red-400" (click)="rechazar(o)">
+            Rechazar
+          </button>
+          <button type="button" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700" (click)="aceptar(o)">
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+  @if (!pedidoOnlineService.pendientes().length) {
+    <div class="col-span-full rounded-xl border border-line bg-surface-2 px-4 py-10 text-center text-ink-muted">
+      No hay pedidos online pendientes.
+    </div>
+  }
+</div>

@@ -43,11 +43,12 @@ export class AdminDashboardComponent {
   constructor() {
     this.settings.ensureLoaded();
     // El inicio del panel es el del ecommerce: un punto de venta arranca en "Vender"
-    // (sus números viven en Caja y Resultados).
+    // y un restaurante en su propio inicio.
     effect(() => {
       if (this.settings.status() !== 'loaded') return;
-      if (this.settings.settings().sistema === 'POS') {
-        this.router.navigate(['/admin/pos'], { replaceUrl: true });
+      const sistema = this.settings.settings().sistema;
+      if (sistema === 'POS' || sistema === 'RESTAURANTE') {
+        this.router.navigate([sistema === 'POS' ? '/admin/pos' : '/admin/restaurante'], { replaceUrl: true });
       } else if (!this.cargado) {
         this.cargado = true;
         this.dashboardService.loadDashboard();

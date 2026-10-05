@@ -1,0 +1,159 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Clientes</h1>
+
+<div class="mb-4 flex gap-6 overflow-x-auto border-b border-line text-sm">
+  @for (t of [['clientes','Clientes'],['cuentas-corrientes','Cuentas Corrientes']]; track t[0]) {
+    <button
+      type="button"
+      class="shrink-0 border-b-2 px-1 pb-2 font-medium"
+      [class]="tab() === t[0] ? 'border-brand-500 text-brand-400' : 'border-transparent text-ink-muted'"
+      (click)="cambiarTab($any(t[0]))"
+    >
+      {{ t[1] }}
+    </button>
+  }
+</div>
+
+<!-- ===================== CLIENTES ===================== -->
+@if (tab() === 'clientes') {
+  <div class="mb-4 flex items-center justify-between">
+    <input type="text" placeholder="Buscar por nombre, email, teléfono, CUIT" class="w-96 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="mostrarForm.set(!mostrarForm())">
+      + Nuevo Cliente
+    </button>
+  </div>
+
+  @if (mostrarForm()) {
+    <div class="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-4 sm:grid-cols-4">
+      <input [(ngModel)]="nombre" placeholder="Nombre" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input [(ngModel)]="email" placeholder="Email" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <input [(ngModel)]="telefono" placeholder="Teléfono" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+      <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="guardar()">Guardar</button>
+    </div>
+  }
+
+  @if (clienteService.kpis(); as kpis) {
+    <div class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div class="rounded-xl border border-line bg-surface-2 p-4">
+        <p class="text-sm text-ink-muted">Total Clientes</p>
+        <p class="mt-1 text-2xl font-semibold text-ink">{{ kpis.total }}</p>
+      </div>
+      <div class="rounded-xl border border-line bg-surface-2 p-4">
+        <p class="text-sm text-ink-muted">Con Cta. Cte.</p>
+        <p class="mt-1 text-2xl font-semibold text-ink">{{ kpis.conCuentaCorriente }}</p>
+      </div>
+      <div class="rounded-xl border border-line bg-surface-2 p-4">
+        <p class="text-sm text-ink-muted">Con Descuento</p>
+        <p class="mt-1 text-2xl font-semibold text-ink">{{ kpis.conDescuento }}</p>
+      </div>
+      <div class="rounded-xl border border-line bg-surface-2 p-4">
+        <p class="text-sm text-ink-muted">Activos</p>
+        <p class="mt-1 text-2xl font-semibold text-mint-500">{{ kpis.activos }}</p>
+      </div>
+    </div>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+    <table class="w-full text-sm">
+      <thead class="bg-surface-3 text-left text-ink-muted">
+        <tr><th class="px-4 py-3 font-medium">Nombre</th><th class="px-4 py-3 font-medium">Teléfono</th><th class="px-4 py-3 font-medium">Instagram</th></tr>
+      </thead>
+      <tbody>
+        @for (c of clienteService.items(); track c.id) {
+          <tr class="border-t border-line">
+            <td class="px-4 py-3 text-ink">
+              {{ c.nombre }}
+              @if (c.email) {
+                <div class="text-xs text-ink-muted">{{ c.email }}</div>
+              }
+            </td>
+            <td class="px-4 py-3 text-ink">{{ c.telefono || '—' }}</td>
+            <td class="px-4 py-3 text-ink">{{ c.instagram || '—' }}</td>
+          </tr>
+        }
+        @if (!clienteService.items().length) {
+          <tr><td colspan="3" class="px-4 py-6 text-center text-ink-muted">Sin clientes todavía.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- ===================== CUENTAS CORRIENTES ===================== -->
+@if (tab() === 'cuentas-corrientes') {
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div class="border-b border-line px-4 py-3 text-sm font-medium text-ink">Con cuenta corriente habilitada</div>
+      <table class="w-full text-sm">
+        <tbody>
+          @for (c of clientesConCuentaCorriente(); track c.id) {
+            <tr class="border-b border-line last:border-0" [class]="clienteSeleccionado()?.id === c.id ? 'bg-surface-3' : ''">
+              <td class="px-4 py-2 text-ink">
+                <button type="button" class="hover:text-brand-400" (click)="verMovimientos(c)">{{ c.nombre }}</button>
+              </td>
+              <td class="px-4 py-2 text-right" [class]="c.saldoCuentaCorriente > 0 ? 'text-red-400 font-medium' : 'text-ink-muted'">
+                ${{ c.saldoCuentaCorriente }}
+              </td>
+              <td class="px-4 py-2 text-right">
+                <button type="button" class="text-xs font-medium text-ink-muted hover:underline" (click)="deshabilitarCuentaCorriente(c)">Deshabilitar</button>
+              </td>
+            </tr>
+          }
+          @if (!clientesConCuentaCorriente().length) {
+            <tr><td colspan="3" class="px-4 py-6 text-center text-ink-muted">Ningún cliente tiene cuenta corriente habilitada.</td></tr>
+          }
+        </tbody>
+      </table>
+
+      @if (clientesSinCuentaCorriente().length) {
+        <div class="border-t border-line px-4 py-3">
+          <p class="mb-2 text-xs font-medium uppercase text-ink-muted">Habilitar para…</p>
+          <div class="flex flex-wrap gap-2">
+            @for (c of clientesSinCuentaCorriente(); track c.id) {
+              <button type="button" class="rounded-full border border-line bg-surface-3 px-3 py-1 text-xs text-ink hover:border-brand-500" (click)="habilitarCuentaCorriente(c)">
+                + {{ c.nombre }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      @if (clienteSeleccionado(); as cliente) {
+        <div class="flex items-center justify-between border-b border-line px-4 py-3">
+          <span class="text-sm font-medium text-ink">Movimientos — {{ cliente.nombre }}</span>
+          <span class="text-sm font-semibold" [class]="cliente.saldoCuentaCorriente > 0 ? 'text-red-400' : 'text-mint-500'">
+            Saldo: ${{ cliente.saldoCuentaCorriente }}
+          </span>
+        </div>
+        <div class="grid grid-cols-1 gap-2 border-b border-line px-4 py-3 sm:grid-cols-4">
+          <select [(ngModel)]="movTipo" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink">
+            <option value="CARGO">Cargo (aumenta deuda)</option>
+            <option value="PAGO">Pago (reduce deuda)</option>
+          </select>
+          <input type="number" [(ngModel)]="movMonto" placeholder="Monto" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+          <input [(ngModel)]="movDescripcion" placeholder="Descripción (opcional)" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+          <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="registrarMovimiento()">Registrar</button>
+        </div>
+        <table class="w-full text-sm">
+          <tbody>
+            @for (m of movimientos(); track m.id) {
+              <tr class="border-b border-line last:border-0">
+                <td class="px-4 py-2 text-ink-muted">{{ m.fecha }}</td>
+                <td class="px-4 py-2 text-ink">{{ m.tipo }}</td>
+                <td class="px-4 py-2 text-ink-muted">{{ m.descripcion || '-' }}</td>
+                <td class="px-4 py-2 text-right text-ink">${{ m.monto }}</td>
+                <td class="px-4 py-2 text-right text-ink-muted">Saldo ${{ m.saldoResultante }}</td>
+              </tr>
+            }
+            @if (!movimientos().length) {
+              <tr><td colspan="5" class="px-4 py-6 text-center text-ink-muted">Sin movimientos todavía.</td></tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="px-4 py-6 text-center text-ink-muted">Elegí un cliente para ver y cargar sus movimientos.</div>
+      }
+    </div>
+  </div>
+}

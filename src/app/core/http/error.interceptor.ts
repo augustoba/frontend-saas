@@ -21,7 +21,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       const isAdminApi = req.url.includes('/api/admin/');
       const isAuth = req.url.includes('/api/auth/');
       // Requests "de fondo" que fallan sin molestar al usuario.
-      const isSilent = req.url.includes('/api/products/best-sellers');
+      const isSilent = req.url.includes('/api/products/best-sellers') || req.url.endsWith('/api/public/restaurante/carta');
 
       if (err.status === 401 && isAdminApi) {
         auth.logout();

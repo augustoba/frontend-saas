@@ -11,6 +11,9 @@ import { PromoBannerComponent } from './shared/components/promo-banner/promo-ban
 import { SettingsService } from './core/services/settings.service';
 import { ensureLayoutFonts } from './core/layouts';
 
+/** Rutas que no llevan el marco de la tienda online (header, footer, diseño). */
+const SIN_MARCO_DE_TIENDA = ['/admin', '/carta/', '/mesa/'];
+
 @Component({
   selector: 'app-root',
   imports: [
@@ -29,13 +32,16 @@ import { ensureLayoutFonts } from './core/layouts';
 export class AppComponent {
   private readonly settingsService = inject(SettingsService);
 
-  /** El panel de administración tiene su propio layout, así que ocultamos header/footer públicos ahí */
+  /**
+   * El panel de administración tiene su propio layout, así que ocultamos header/footer públicos ahí.
+   * Lo mismo la carta y el autopedido del restaurante: tienen su propia interfaz.
+   */
   readonly isAdminRoute = signal(false);
 
   constructor(router: Router) {
     router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe((e) => this.isAdminRoute.set(e.urlAfterRedirects.startsWith('/admin')));
+      .subscribe((e) => this.isAdminRoute.set(SIN_MARCO_DE_TIENDA.some((p) => e.urlAfterRedirects.startsWith(p))));
 
     // Único lugar que escribe `data-layout` en <html>. Lo lee `styles.css` para
     // cambiar fuentes, radios y paleta de TODA la tienda (header, footer y

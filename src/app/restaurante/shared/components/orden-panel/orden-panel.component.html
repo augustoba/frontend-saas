@@ -1,0 +1,146 @@
+@if (ordenService.ordenActual(); as orden) {
+  <div class="flex h-full flex-col">
+    <div class="border-b border-line p-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-ink">{{ titulo }}</h2>
+        <button type="button" class="text-ink-muted hover:text-ink" (click)="cerrada.emit()">✕</button>
+      </div>
+      @if (orden.comensales) {
+        <p class="mt-1 text-sm text-ink-muted">{{ orden.comensales }} comensales · {{ orden.usuarioNombre }}</p>
+      }
+      @if (orden.tipo === 'MESA' && orden.tokenSesion) {
+        <button type="button" class="mt-2 text-xs font-medium text-brand-400 hover:underline" (click)="toggleLinkCliente(orden.tokenSesion)">
+          {{ mostrarLinkCliente() ? 'Ocultar' : '📱 Compartir con el cliente (autopedido)' }}
+        </button>
+        @if (mostrarLinkCliente()) {
+          <div class="mt-2 rounded-lg border border-line bg-surface-3 p-3">
+            @if (qrLinkCliente(); as qr) {
+              <img [src]="qr" alt="QR de autopedido" class="mx-auto mb-2 h-32 w-32 rounded" />
+            }
+            <div class="flex gap-2">
+              <input type="text" readonly [value]="linkCliente(orden.tokenSesion)" class="flex-1 rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink-muted" />
+              <button type="button" class="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white" (click)="copiarLinkCliente(orden.tokenSesion)">Copiar</button>
+            </div>
+            <p class="mt-1 text-[11px] text-ink-muted">Válido mientras la mesa esté abierta.</p>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="border-b border-line p-4">
+      <button
+        type="button"
+        class="w-full rounded-lg border border-line bg-surface-3 py-2 text-sm font-medium text-ink hover:border-brand-500"
+        (click)="mostrarPicker.set(true)"
+      >
+        🍽 Agregar productos
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4">
+      @if (orden.items.length) {
+        <div class="space-y-3">
+          @for (item of orden.items; track item.id) {
+            <div class="rounded-lg border border-line bg-surface-3 p-3">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-medium text-ink">
+                  {{ item.productoNombre }}
+                  @if (usaPasos()) {
+                    <span class="ml-1 text-xs font-normal text-ink-muted">· Paso {{ item.paso }}</span>
+                  }
+                </p>
+                <span
+                  class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                  [class]="item.estado === 'PENDIENTE' ? 'bg-amber-500/20 text-amber-400' : 'bg-mint-100 text-mint-600'"
+                >
+                  {{ item.estado === 'PENDIENTE' ? 'Pendiente' : 'Confirmado' }}
+                </span>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <button type="button" class="h-6 w-6 rounded bg-surface-2 text-ink" (click)="cambiarCantidad(item.id, item.cantidad - 1, item.notas)">−</button>
+                  <span class="w-6 text-center text-sm text-ink">{{ item.cantidad }}</span>
+                  <button type="button" class="h-6 w-6 rounded bg-surface-2 text-ink" (click)="cambiarCantidad(item.id, item.cantidad + 1, item.notas)">+</button>
+                </div>
+                <span class="text-sm font-medium text-ink">$ {{ item.subtotal }}</span>
+              </div>
+              @if (item.estado === 'PENDIENTE') {
+                <button type="button" class="mt-2 text-xs text-brand-400 hover:underline" (click)="quitarItem(item.id)">Quitar</button>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="py-10 text-center text-ink-muted">El pedido no contiene adiciones.<br />Buscá un producto o abrí el menú.</p>
+      }
+    </div>
+
+    <div class="border-t border-line p-4">
+      @if (orden.items.length) {
+        <div class="mb-3 flex gap-2">
+          <button type="button" class="flex-1 rounded-lg border border-line py-1.5 text-xs font-medium text-ink-muted hover:border-brand-500 hover:text-ink" (click)="imprimir('comanda')">
+            🖨 Comanda
+          </button>
+          <button type="button" class="flex-1 rounded-lg border border-line py-1.5 text-xs font-medium text-ink-muted hover:border-brand-500 hover:text-ink" (click)="imprimir('precuenta')">
+            🖨 Pre-cuenta
+          </button>
+        </div>
+      }
+      @if (orden.descuentoMonto > 0) {
+        <div class="mb-1 flex items-center justify-between text-xs text-ink-muted">
+          <span>Subtotal</span>
+          <span>$ {{ orden.subtotal }}</span>
+        </div>
+        <div class="mb-1 flex items-center justify-between text-xs text-brand-400">
+          <span>Descuento</span>
+          <span>- $ {{ orden.descuentoMonto }}</span>
+        </div>
+      }
+      <div class="mb-1 flex items-center justify-between">
+        <span class="text-sm text-ink-muted">Total</span>
+        <span class="text-xl font-bold text-ink">$ {{ orden.total }}</span>
+      </div>
+      <button type="button" class="mb-3 text-xs font-medium text-brand-400 hover:underline" (click)="abrirDescuento(orden.descuentoMonto)">
+        {{ orden.descuentoMonto > 0 ? 'Editar descuento' : '+ Aplicar descuento' }}
+      </button>
+      @if (mostrarDescuento()) {
+        <div class="mb-3 flex gap-2">
+          <input type="number" [(ngModel)]="descuentoMonto" placeholder="Monto de descuento" class="flex-1 rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+          <button type="button" class="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="aplicarDescuento()">Aplicar</button>
+        </div>
+      }
+
+      @if (usaPasos()) {
+        @if (hayPendientesDelPasoActual(orden)) {
+          <button type="button" class="mb-2 w-full rounded-lg bg-surface-3 py-2.5 text-sm font-medium text-ink hover:bg-surface" (click)="confirmarItems()">
+            Confirmar Paso {{ orden.pasoActual }}
+          </button>
+        } @else if (orden.items.length) {
+          <button type="button" class="mb-2 w-full rounded-lg border border-line py-2.5 text-sm font-medium text-ink hover:border-brand-500" (click)="siguientePaso()">
+            + Iniciar Paso {{ orden.pasoActual + 1 }}
+          </button>
+        }
+      } @else if (hayPendientes(orden)) {
+        <button type="button" class="mb-2 w-full rounded-lg bg-surface-3 py-2.5 text-sm font-medium text-ink hover:bg-surface" (click)="confirmarItems()">
+          Confirmar Artículos
+        </button>
+      }
+      <button
+        type="button"
+        class="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-40"
+        [disabled]="!orden.items.length"
+        (click)="mostrarPago.set(true)"
+      >
+        Cobrar
+      </button>
+    </div>
+  </div>
+
+  @if (mostrarPicker()) {
+    <app-producto-picker (elegido)="agregarProducto($event); mostrarPicker.set(false)" (cerrado)="mostrarPicker.set(false)" />
+  }
+
+  @if (mostrarPago()) {
+    <app-pago-modal [ordenId]="orden.id" [total]="orden.total" (pagado)="onPagado()" (cerrado)="mostrarPago.set(false)" />
+  }
+}

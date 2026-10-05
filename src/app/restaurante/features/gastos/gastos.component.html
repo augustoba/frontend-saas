@@ -1,0 +1,78 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Gastos</h1>
+
+<div class="mb-4 flex items-center justify-between">
+  <input type="text" placeholder="Buscar proveedor, comprobante…" class="w-96 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+  <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="mostrarForm.set(!mostrarForm())">
+    + Agregar Gasto
+  </button>
+</div>
+
+@if (mostrarForm()) {
+  <div class="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-2 p-4 sm:grid-cols-5">
+    <select [(ngModel)]="categoriaGastoId" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink">
+      <option [ngValue]="null">Categoría…</option>
+      @for (c of gastoService.categorias(); track c.id) {
+        <option [ngValue]="c.id">{{ c.nombre }}</option>
+      }
+    </select>
+    <input type="date" [(ngModel)]="fecha" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+    <input type="number" [(ngModel)]="monto" placeholder="Monto" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+    <input [(ngModel)]="descripcion" placeholder="Descripción" class="rounded-lg border border-line bg-surface-3 px-3 py-2 text-sm text-ink" />
+    <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="guardar()">Guardar</button>
+  </div>
+}
+
+@if (gastoService.kpis(); as kpis) {
+  <div class="mb-4 flex flex-wrap gap-3">
+    <span class="rounded-full border border-line px-3 py-1 text-xs text-ink-muted">A vencer {{ kpis.aVencer }}</span>
+    <span class="rounded-full border border-line px-3 py-1 text-xs text-ink-muted">Vencidos {{ kpis.vencidos }}</span>
+    <span class="rounded-full border border-line px-3 py-1 text-xs text-ink-muted">Total a pagar $ {{ kpis.totalAPagar }}</span>
+    <span class="rounded-full border border-line px-3 py-1 text-xs text-ink-muted">Total pagado $ {{ kpis.totalPagado }}</span>
+  </div>
+}
+
+<div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+  <table class="w-full text-sm">
+    <thead class="bg-surface-3 text-left text-ink-muted">
+      <tr>
+        <th class="px-4 py-3 font-medium">Fecha</th>
+        <th class="px-4 py-3 font-medium">Vencimiento</th>
+        <th class="px-4 py-3 font-medium">Proveedor</th>
+        <th class="px-4 py-3 font-medium">Monto</th>
+        <th class="px-4 py-3 font-medium">Estado</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (g of gastoService.items(); track g.id) {
+        <tr class="border-t border-line">
+          <td class="px-4 py-3 text-ink">{{ g.fecha }}</td>
+          <td class="px-4 py-3 text-brand-400">{{ g.fechaVencimiento || '—' }}</td>
+          <td class="px-4 py-3 text-ink">{{ g.proveedorNombre || '—' }}</td>
+          <td class="px-4 py-3 text-ink">$ {{ g.monto }}</td>
+          <td class="px-4 py-3">
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-medium"
+              [class.bg-mint-100]="g.estado === 'PAGADO'"
+              [class.text-mint-600]="g.estado === 'PAGADO'"
+              [class.bg-red-100]="g.estado === 'VENCIDO'"
+              [class.text-red-600]="g.estado === 'VENCIDO'"
+              [class.bg-surface-3]="g.estado === 'PENDIENTE'"
+              [class.text-ink-muted]="g.estado === 'PENDIENTE'"
+            >
+              {{ g.estado }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            @if (g.estado !== 'PAGADO') {
+              <button type="button" class="text-ink-muted hover:text-brand-400" (click)="marcarPagado(g)">Marcar pagado</button>
+            }
+          </td>
+        </tr>
+      }
+      @if (!gastoService.items().length) {
+        <tr><td colspan="6" class="px-4 py-6 text-center text-ink-muted">Sin gastos todavía.</td></tr>
+      }
+    </tbody>
+  </table>
+</div>

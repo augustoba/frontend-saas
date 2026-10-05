@@ -1,0 +1,94 @@
+<h1 class="mb-4 text-2xl font-semibold text-ink">Ventas y Propinas</h1>
+
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  <input type="date" [(ngModel)]="desde" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+  <span class="text-ink-muted">a</span>
+  <input type="date" [(ngModel)]="hasta" class="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink" />
+  <button type="button" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700" (click)="cargar()">
+    Actualizar
+  </button>
+</div>
+
+@if (reporteService.ventas(); as v) {
+  <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Total Ventas</p>
+      <p class="mt-1 text-2xl font-semibold text-ink">$ {{ v.totalVentas }}</p>
+    </div>
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Órdenes</p>
+      <p class="mt-1 text-2xl font-semibold text-ink">{{ v.cantidadOrdenes }}</p>
+    </div>
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Ticket Promedio</p>
+      <p class="mt-1 text-2xl font-semibold text-ink">$ {{ v.ticketPromedio }}</p>
+    </div>
+    <div class="rounded-xl border border-line bg-surface-2 p-4">
+      <p class="text-sm text-ink-muted">Propinas</p>
+      <p class="mt-1 text-2xl font-semibold text-mint-500">$ {{ reporteService.propinas()?.totalPropinas ?? 0 }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div class="border-b border-line px-4 py-3 text-sm font-medium text-ink">Ventas por día</div>
+      <table class="w-full text-sm">
+        <tbody>
+          @for (d of v.ventasPorDia; track d.fecha) {
+            <tr class="border-b border-line last:border-0">
+              <td class="px-4 py-2 text-ink-muted">{{ d.fecha }}</td>
+              <td class="px-4 py-2 text-right text-ink">$ {{ d.total }}</td>
+            </tr>
+          }
+          @if (!v.ventasPorDia.length) {
+            <tr><td class="px-4 py-6 text-center text-ink-muted">Sin ventas en el período.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <div class="border-b border-line px-4 py-3 text-sm font-medium text-ink">Ventas por medio de pago</div>
+      <table class="w-full text-sm">
+        <tbody>
+          @for (m of v.ventasPorMedioPago; track m.etiqueta) {
+            <tr class="border-b border-line last:border-0">
+              <td class="px-4 py-2 text-ink">{{ m.etiqueta }}</td>
+              <td class="px-4 py-2 text-right text-ink">$ {{ m.total }}</td>
+            </tr>
+          }
+          @if (!v.ventasPorMedioPago.length) {
+            <tr><td class="px-4 py-6 text-center text-ink-muted">Sin ventas en el período.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-4 overflow-hidden rounded-xl border border-line bg-surface-2">
+    <div class="border-b border-line px-4 py-3 text-sm font-medium text-ink">Productos más vendidos</div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-line text-left text-ink-muted">
+          <th class="px-4 py-2 font-normal">Producto</th>
+          <th class="px-4 py-2 text-right font-normal">Cantidad</th>
+          <th class="px-4 py-2 text-right font-normal">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of reporteService.productos()?.productos ?? []; track p.productoId) {
+          <tr class="border-b border-line last:border-0">
+            <td class="px-4 py-2 text-ink">{{ p.productoNombre }}</td>
+            <td class="px-4 py-2 text-right text-ink">{{ p.cantidad }}</td>
+            <td class="px-4 py-2 text-right text-ink">$ {{ p.total }}</td>
+          </tr>
+        }
+        @if (!reporteService.productos()?.productos?.length) {
+          <tr><td colspan="3" class="px-4 py-6 text-center text-ink-muted">Sin ventas en el período.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <p class="text-ink-muted">Cargando…</p>
+}
