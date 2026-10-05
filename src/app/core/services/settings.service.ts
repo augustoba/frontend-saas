@@ -233,6 +233,14 @@ const DEFAULTS: SiteSettings = {
  * `/admin/config` y se guardan en el backend → cambiar el número o las redes
  * no requiere redesplegar nada.
  */
+/** Lo que devuelve `/admin/settings/cloudinary`: el Secret nunca viaja, sólo si está cargado. */
+export interface CloudinaryConfig {
+  cloudName: string | null;
+  uploadPreset: string | null;
+  apiKey: string | null;
+  apiSecretSet: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly http = inject(HttpClient);
@@ -429,13 +437,29 @@ export class SettingsService {
    * backend devuelve 403 si no (`/admin/superadmin/cloudinary` ya valida antes
    * de mostrar el form, pero el guard de la ruta es la primera barrera).
    */
-  updateCloudinaryConfig(cloudName: string | null, uploadPreset: string | null): Observable<boolean> {
+  /** Config privada de Cloudinary (API Key; del Secret sólo si hay uno guardado). Sólo superadmin. */
+  fetchCloudinaryConfig(): Observable<CloudinaryConfig> {
+    return this.http.get<CloudinaryConfig>(apiUrl('/admin/settings/cloudinary'));
+  }
+
+  /**
+   * `apiKey`/`apiSecret` son opcionales y sólo sirven para BORRAR fotos (borrado
+   * definitivo de productos). `apiSecret` vacío = no cambiar el guardado.
+   */
+  updateCloudinaryConfig(
+    cloudName: string | null,
+    uploadPreset: string | null,
+    apiKey: string | null = null,
+    apiSecret: string | null = null,
+  ): Observable<CloudinaryConfig | null> {
     this.saving.set(true);
-    return new Observable<boolean>((sub) => {
+    return new Observable<CloudinaryConfig | null>((sub) => {
       this.http
-        .put<{ cloudName: string | null; uploadPreset: string | null }>(apiUrl('/admin/settings/cloudinary'), {
+        .put<CloudinaryConfig>(apiUrl('/admin/settings/cloudinary'), {
           cloudName,
           uploadPreset,
+          apiKey,
+          apiSecret,
         })
         .subscribe({
           next: (res) => {
@@ -445,12 +469,12 @@ export class SettingsService {
               cloudinaryUploadPreset: res.uploadPreset,
             }));
             this.saving.set(false);
-            sub.next(true);
+            sub.next(res);
             sub.complete();
           },
           error: () => {
             this.saving.set(false);
-            sub.next(false);
+            sub.next(null);
             sub.complete();
           },
         });

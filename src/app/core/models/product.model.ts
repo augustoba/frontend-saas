@@ -37,6 +37,7 @@ export interface Product {
   /** Talles en los que viene el producto, cada uno con su propio stock */
   sizeStocks: SizeStock[];
   /** Fotos del producto, en orden. La primera es la portada. Siempre hay al menos una. */
+  /** Galería completa. Sólo viene en el admin y en el detalle público (`GET /products/{id}`), no en el listado. */
   images: string[];
   /** Link a un video de la prenda (YouTube). Opcional. Se muestra embebido en la ficha. */
   videoUrl?: string;

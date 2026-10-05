@@ -83,6 +83,14 @@ export class ProductService {
     return this.http.get<Product>(apiUrl(`/admin/products/${id}`));
   }
 
+  /**
+   * Detalle público de un producto. El listado público no trae `images[]` (sólo
+   * la portada, que es lo que usan las tarjetas), así que la ficha la pide aparte.
+   */
+  fetchOnePublic(id: string): Observable<Product> {
+    return this.http.get<Product>(apiUrl(`/products/${id}`));
+  }
+
   // --- Mutaciones (admin) ---
 
   create(input: ProductInput, onSuccess?: () => void): void {
