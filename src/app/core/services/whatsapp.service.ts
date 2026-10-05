@@ -35,10 +35,6 @@ export class WhatsappService {
     window.open(url, '_blank', 'noopener');
   }
 
-  /**
-   * Texto plano del resumen del pedido (el mismo que va al mensaje de WhatsApp).
-   * Lo usa el panel para "copiar resumen" / reenviarlo a mano.
-   */
   /** Link para que el cliente coordine la entrega de un pedido ya pagado por Mercado Pago. */
   buildPublicCoordinationLink(order: PublicOrder): string {
     const settings = this.settingsService.settings();
@@ -46,6 +42,10 @@ export class WhatsappService {
     return `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }
 
+  /**
+   * Texto plano del resumen del pedido (el mismo que va al mensaje de WhatsApp).
+   * Lo usa el panel para "copiar resumen" / reenviarlo a mano.
+   */
   buildOrderMessage(order: Order): string {
     const settings = this.settingsService.settings();
     const lines = order.lines.map((line, index) => {
