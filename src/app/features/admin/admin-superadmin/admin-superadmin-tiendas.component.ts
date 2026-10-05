@@ -1,3 +1,4 @@
+import { SISTEMA_LABELS, Sistema } from '../../../core/models/sistema.model';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +22,8 @@ import { TenantDraft, TenantWizardComponent } from './tenant-wizard.component';
   templateUrl: './admin-superadmin-tiendas.component.html',
 })
 export class AdminSuperadminTiendasComponent {
+  /** "Ecommerce", "Punto de venta" o "Restaurante". */
+  readonly sistemaLabel = (s: Sistema) => SISTEMA_LABELS[s] ?? s;
   private readonly tenantAdmin = inject(TenantAdminService);
   private readonly demoTenant = inject(DemoTenantService);
   private readonly toast = inject(ToastService);

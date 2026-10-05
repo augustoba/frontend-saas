@@ -455,6 +455,16 @@ export const routes: Routes = [
         title: 'Facturación (ARCA) | Admin',
       },
       {
+        path: 'config/dominios',
+        canActivate: [permissionGuard],
+        data: { permission: 'DOMAINS_MANAGE' },
+        loadComponent: () =>
+          import('./features/admin/admin-config/admin-dominios.component').then(
+            (m) => m.AdminDominiosComponent
+          ),
+        title: 'Dominios | Admin',
+      },
+      {
         path: 'config/ayuda',
         canActivate: [permissionGuard],
         data: { permission: 'PLATFORM_SETTINGS_MANAGE' },

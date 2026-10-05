@@ -1,0 +1,102 @@
+<h1 class="font-display font-extrabold text-2xl text-stone-800 mb-2">Dominios</h1>
+<p class="text-sm text-stone-500 mb-6 max-w-2xl">
+  Tu tienda siempre responde en su dirección gratis de la plataforma. Si tenés un dominio propio (por ejemplo
+  <span class="font-mono">mitienda.com.ar</span>), cargalo acá, apuntalo a nuestro servidor desde donde lo compraste
+  y verificalo: el candado de seguridad (HTTPS) se activa solo.
+</p>
+
+@if (loading()) {
+  <p class="text-sm text-stone-400">Cargando…</p>
+} @else {
+  @if (info(); as i) {
+  <div class="max-w-2xl space-y-6">
+    <section class="bg-white rounded-2xl ring-1 ring-black/5 p-6">
+      <h2 class="text-sm font-semibold text-stone-700 mb-1">Dirección gratis</h2>
+      <p class="font-mono text-stone-800 break-all">{{ i.subdominio }}</p>
+      <p class="text-xs text-stone-400 mt-3">
+        Los links de los mails y la vuelta de Mercado Pago usan:
+        <span class="font-mono text-stone-600 break-all">{{ i.urlPublica }}</span>
+      </p>
+    </section>
+
+    <section class="bg-white rounded-2xl ring-1 ring-black/5 p-6">
+      <h2 class="text-sm font-semibold text-stone-700 mb-4">Dominios propios</h2>
+
+      @if (i.dominios.length === 0) {
+        <p class="text-sm text-stone-400 mb-4">Todavía no cargaste ninguno.</p>
+      } @else {
+        <ul class="divide-y divide-stone-100 mb-5">
+          @for (d of i.dominios; track d.id) {
+            <li class="py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span class="font-mono text-stone-800 break-all">{{ d.host }}</span>
+              @if (d.estado === 'ACTIVO') {
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">Activo</span>
+              } @else {
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Pendiente</span>
+              }
+              @if (d.principal) {
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">Principal</span>
+              }
+              <span class="flex-1"></span>
+              @if (d.estado === 'PENDIENTE') {
+                <button type="button" (click)="verificar(d)" [disabled]="ocupado() !== null"
+                  class="text-sm font-semibold text-brand-600 hover:text-brand-700 disabled:text-stone-300">
+                  {{ ocupado() === d.id ? 'Verificando…' : 'Verificar' }}
+                </button>
+              }
+              @if (!d.principal) {
+                <button type="button" (click)="marcarPrincipal(d)" [disabled]="ocupado() !== null"
+                  class="text-sm font-semibold text-stone-600 hover:text-stone-800 disabled:text-stone-300">
+                  Hacer principal
+                </button>
+              }
+              <button type="button" (click)="eliminar(d)" [disabled]="ocupado() !== null"
+                class="text-sm font-semibold text-red-500 hover:text-red-600 disabled:text-stone-300">
+                Quitar
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <form (ngSubmit)="agregar()" class="flex flex-col sm:flex-row gap-2">
+        <label class="sr-only" for="nuevoHost">Dominio</label>
+        <input id="nuevoHost" name="nuevoHost" type="text" autocomplete="off" spellcheck="false"
+          [ngModel]="nuevoHost()" (ngModelChange)="nuevoHost.set($event)"
+          placeholder="mitienda.com.ar"
+          class="flex-1 rounded-lg border border-stone-200 px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-400" />
+        <button type="submit" [disabled]="!nuevoHost().trim() || ocupado() !== null"
+          class="bg-brand-500 hover:bg-brand-600 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-bold py-2.5 px-6 rounded-full transition-colors">
+          {{ ocupado() === 'nuevo' ? 'Cargando…' : 'Agregar' }}
+        </button>
+      </form>
+
+      @if (error()) {
+        <p class="text-sm text-red-500 font-semibold mt-4">{{ error() }}</p>
+      }
+    </section>
+
+    <section class="rounded-2xl bg-stone-50 ring-1 ring-black/5 p-6 text-sm text-stone-600">
+      <h2 class="font-semibold text-stone-700 mb-2">Cómo apuntar tu dominio</h2>
+      <ol class="list-decimal ml-5 space-y-1.5">
+        <li>Entrá al panel donde compraste el dominio (NIC.ar, GoDaddy, Donweb…).</li>
+        <li>
+          Creá un registro <span class="font-mono">A</span> para el dominio
+          @if (i.ipServidor) {
+            apuntando a <span class="font-mono font-semibold text-stone-800">{{ i.ipServidor }}</span>.
+          } @else {
+            apuntando a la IP del servidor (en este entorno de prueba no hace falta: se activa directo).
+          }
+        </li>
+        <li>
+          Para que también ande con <span class="font-mono">www</span>, creá un <span class="font-mono">CNAME</span>
+          de <span class="font-mono">www</span> a <span class="font-mono break-all">{{ i.subdominio }}</span> y cargalo acá también.
+        </li>
+        <li>Volvé y tocá <strong>Verificar</strong>. Los cambios de DNS pueden tardar unas horas.</li>
+      </ol>
+    </section>
+  </div>
+  } @else if (error()) {
+  <p class="text-sm text-red-500 font-semibold">{{ error() }}</p>
+}
+}

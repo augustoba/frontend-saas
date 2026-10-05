@@ -3,13 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { CollectionStore } from '../state/collection-store';
 import { apiUrl } from '../config/site-config';
 
-export type BusinessModel = 'ECOMMERCE' | 'POS';
+import { Sistema } from '../models/sistema.model';
+
+/** Igual a `Sistema`: el backend sigue mandando `businessModel` = `sistema`. */
+export type BusinessModel = Sistema;
 
 export interface PlanRecord {
   id: string;
   slug: string;
   name: string;
-  /** Fijo, no se edita — determina qué módulos son compatibles (ver `compatibleModules`). */
+  /** Sistema del plan: fijo, no se edita. Determina qué módulos son compatibles (ver `compatibleModules`). */
+  sistema: Sistema;
+  /** Igual a `sistema` (lo manda el backend por compatibilidad). */
   businessModel: BusinessModel;
   /** null = sin límite. */
   maxProducts: number | null;

@@ -27,6 +27,7 @@ import { LAYOUTS, layoutSwatchVars } from '../admin-appearance/admin-appearance.
 import { TEMPLATE_LAYOUTS, ensureLayoutFonts } from '../../../core/layouts';
 import { PlanRecord } from '../../../core/services/plan-admin.service';
 import { MODULE_OPTIONS } from '../../../core/models/plan-module.model';
+import { SISTEMA_LABELS, SISTEMAS, Sistema } from '../../../core/models/sistema.model';
 
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 const DEFAULT_PREVIEW_COLOR = '#f97316';
@@ -77,6 +78,20 @@ export class TenantWizardComponent {
   readonly plans = this.planAdmin.plans;
   readonly draftPlanId = signal<string | null>(null);
   private planSeeded = false;
+
+  // Sistema de la tienda (ecommerce, POS o restaurante): define qué planes se
+  // pueden elegir — el backend rechaza un plan de otro sistema.
+  readonly sistemas = SISTEMAS;
+  readonly sistemaLabels = SISTEMA_LABELS;
+  readonly draftSistema = signal<Sistema>('ECOMMERCE');
+  readonly plansDelSistema = computed(() => this.plans().filter((p) => p.sistema === this.draftSistema()));
+
+  // Administrador inicial (opcional): con qué usuario entra el dueño a su panel.
+  readonly adminNombre = signal('');
+  readonly adminApellido = signal('');
+  readonly adminDni = signal('');
+  readonly adminEmail = signal('');
+  readonly adminPassword = signal('');
 
   // Paso 1: diseño
   readonly draftLayout = signal('classic');
@@ -151,6 +166,27 @@ export class TenantWizardComponent {
 
   setPlan(id: string): void {
     this.draftPlanId.set(id);
+  }
+
+  /** Cambia el sistema y elige el primer plan de ese sistema (el de antes ya no aplica). */
+  setSistema(s: Sistema): void {
+    this.draftSistema.set(s);
+    this.draftPlanId.set(this.plansDelSistema()[0]?.id ?? null);
+  }
+
+  /**
+   * El admin inicial es todo o nada: vacío = sin admin; si se empezó a cargar,
+   * tienen que estar todos los campos. Devuelve el mensaje de error o null.
+   */
+  private validarAdmin(): string | null {
+    const campos = [this.adminNombre(), this.adminApellido(), this.adminDni(), this.adminEmail(), this.adminPassword()]
+      .map((v) => v.trim());
+    if (campos.every((v) => !v)) return null;
+    if (campos.some((v) => !v)) return 'Para crear el administrador completá todos sus datos (o dejalos todos vacíos).';
+    if (!/^\d{6,20}$/.test(campos[2])) return 'El DNI del administrador tiene que ser sólo números.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(campos[3])) return 'El email del administrador no es válido.';
+    if (campos[4].length < 4) return 'La contraseña del administrador tiene que tener al menos 4 caracteres.';
+    return null;
   }
 
   /** "Sitio web, Mercado Pago, Punto de venta…" — para distinguir planes de un vistazo. */
@@ -308,6 +344,11 @@ export class TenantWizardComponent {
   async crearTienda(): Promise<void> {
     if (this.creating()) return;
     this.error.set(null);
+    const adminError = this.validarAdmin();
+    if (adminError) {
+      this.error.set(adminError);
+      return;
+    }
     this.creating.set(true);
 
     let logoUrl: string | undefined;
@@ -349,6 +390,16 @@ export class TenantWizardComponent {
         logoUrl,
         logoShape: this.logoShape(),
         planId: this.draftPlanId() ?? undefined,
+        sistema: this.draftSistema(),
+        admin: this.adminDni().trim()
+          ? {
+              nombre: this.adminNombre().trim(),
+              apellido: this.adminApellido().trim(),
+              dni: this.adminDni().trim(),
+              email: this.adminEmail().trim(),
+              password: this.adminPassword(),
+            }
+          : undefined,
       },
       (tenant) => {
         this.creating.set(false);
@@ -357,9 +408,9 @@ export class TenantWizardComponent {
         this.created.emit(tenant);
         this.step.set(7);
       },
-      () => {
+      (message) => {
         this.creating.set(false);
-        this.error.set('No se pudo crear la tienda. Revisá el identificador (puede que ya exista).');
+        this.error.set(message || 'No se pudo crear la tienda. Revisá el identificador (puede que ya exista).');
       }
     );
   }

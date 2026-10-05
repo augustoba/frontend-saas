@@ -1,3 +1,4 @@
+import { Sistema } from '../models/sistema.model';
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CollectionStore } from '../state/collection-store';
@@ -11,8 +12,17 @@ export interface TenantRecord {
   rubroLabel: string;
   active: boolean;
   createdAt: string;
-  /** Módulo ECOMMERCE_SITE de su plan — false = tienda sólo punto de venta, sin sitio público (ver Fase 17). */
+  sistema: Sistema;
+  /** `sistema === 'ECOMMERCE'`: tiene sitio público. */
   ecommerceSiteEnabled: boolean;
+}
+
+export interface AdminInicial {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  email: string;
+  password: string;
 }
 
 export interface RubroOption {
@@ -43,12 +53,12 @@ export interface TenantCreateRequest {
   logoUrl?: string;
   /** Forma del logo (`circle` | `square` | `rectangle`, ver PLAN_SAAS.md Fase 10). */
   logoShape?: string;
-  /**
-   * Plan comercial a asignar (Fase 14) — define qué módulos tiene la tienda
-   * (sitio web, punto de venta, o ambos). Vacío/omitido = el plan por
-   * defecto.
-   */
+  /** Plan a asignar: tiene que ser del mismo sistema. Vacío = el plan de partida del sistema. */
   planId?: string;
+  /** Sistema de la tienda. Vacío = el del plan elegido. */
+  sistema?: Sistema;
+  /** Usuario "Administrador" con el que el dueño entra a su panel (opcional). */
+  admin?: AdminInicial;
 }
 
 /**
@@ -76,7 +86,7 @@ export class TenantAdminService {
   }
 
   /** Crea la tienda; en éxito recarga el listado y avisa con la tienda creada (para poder navegar a verla). */
-  create(req: TenantCreateRequest, onSuccess: (tenant: TenantRecord) => void, onError?: () => void): void {
+  create(req: TenantCreateRequest, onSuccess: (tenant: TenantRecord) => void, onError?: (message?: string) => void): void {
     this.savingSignal.set(true);
     this.http.post<TenantRecord>(apiUrl('/admin/tenants'), req).subscribe({
       next: (tenant) => {
@@ -84,9 +94,9 @@ export class TenantAdminService {
         this.store.reload();
         onSuccess(tenant);
       },
-      error: () => {
+      error: (err) => {
         this.savingSignal.set(false);
-        onError?.();
+        onError?.(err?.error?.message);
       },
     });
   }

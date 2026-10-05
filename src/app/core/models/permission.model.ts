@@ -1,4 +1,7 @@
-/** Permisos ("objetos") que se le asignan a un rol. Espejo del enum del backend. */
+/**
+ * Permisos ("objetos") que se le asignan a un rol. Espejo de los catálogos del
+ * backend (`PermisosNucleo` + uno por sistema): cada tienda sólo ve los de su sistema.
+ */
 export type Permission =
   | 'PRODUCTS_VIEW'
   | 'PRODUCTS_MANAGE'
@@ -21,7 +24,8 @@ export type Permission =
   | 'USERS_MANAGE'
   | 'EXPENSES_MANAGE'
   | 'FINANCE_VIEW'
-  | 'STOCK_MOVEMENTS_VIEW';
+  | 'STOCK_MOVEMENTS_VIEW'
+  | 'DOMAINS_MANAGE';
 
 /** Info de un permiso para armar los checkboxes (viene de `/api/admin/permissions`). */
 export interface PermissionInfo {

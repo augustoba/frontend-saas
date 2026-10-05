@@ -4,14 +4,11 @@ import { PlanAdminService, PlanRecord } from '../../../core/services/plan-admin.
 import { ToastService } from '../../../core/services/toast.service';
 import { MODULE_OPTIONS } from '../../../core/models/plan-module.model';
 
-const BUSINESS_MODEL_LABELS: Record<string, string> = {
-  ECOMMERCE: 'Ecommerce',
-  POS: 'Punto de venta',
-};
+import { SISTEMA_LABELS } from '../../../core/models/sistema.model';
 
 /**
  * Una tarjeta editable por plan (límites, módulos, branding) — Fase 17: el
- * `businessModel` del plan (fijo, no se edita acá) filtra qué módulos se
+ * sistema del plan (fijo, no se edita acá) filtra qué módulos se
  * pueden tildar, así no aparece "Mercado Pago" como opción en un plan de
  * Punto de venta ni "Punto de venta (kiosco)" en uno de Ecommerce. Self-
  * contained: guarda directo contra `PlanAdminService`, no emite eventos.
@@ -29,7 +26,7 @@ export class PlanEditorComponent {
   readonly plan = input.required<PlanRecord>();
   readonly saving = this.planAdmin.saving;
 
-  readonly businessModelLabel = computed(() => BUSINESS_MODEL_LABELS[this.plan().businessModel] ?? this.plan().businessModel);
+  readonly businessModelLabel = computed(() => SISTEMA_LABELS[this.plan().sistema] ?? this.plan().sistema);
 
   /** Sólo los módulos compatibles con el modelo de negocio de este plan — el resto ni se muestra. */
   readonly moduleOptions = computed(() => {

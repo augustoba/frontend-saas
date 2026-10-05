@@ -1,3 +1,4 @@
+import { Sistema } from '../models/sistema.model';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
@@ -142,17 +143,11 @@ export interface SiteSettings {
    */
   storePhotoUrl?: string | null;
   aboutPageEnabled?: boolean;
-  /**
-   * Módulo `POS` habilitado en el plan (Fase 14) — el panel lo usa para
-   * decidir si mostrar el punto de venta (kiosco) en el menú.
-   */
+  /** Sistema de la tienda: decide qué menú ve el panel y qué sitio público tiene. */
+  sistema: Sistema;
+  /** `sistema === 'POS'` (lo manda el backend por compatibilidad; preferir `sistema`). */
   posEnabled: boolean;
-  /**
-   * Módulo `ECOMMERCE_SITE` habilitado en el plan (Fase 14) — un tenant sin
-   * esto no tiene sitio público (el backend ya bloquea las rutas públicas);
-   * el panel lo usa para no mostrar pantallas de ecommerce (Catálogo
-   * online, Apariencia, Carrusel, etc.) que no aplican.
-   */
+  /** `sistema === 'ECOMMERCE'`: tiene tienda online. */
   ecommerceSiteEnabled: boolean;
   /**
    * true sólo si el módulo `ARCA_INVOICING` está habilitado en el plan Y la
@@ -218,7 +213,8 @@ const DEFAULTS: SiteSettings = {
   cloudinaryUploadPreset: 'estilospequenos',
   socialShareEnabled: true,
   mercadoPagoAvailable: false,
-  posEnabled: true,
+  sistema: 'ECOMMERCE',
+  posEnabled: false,
   ecommerceSiteEnabled: true,
   arcaAvailable: false,
   invoiceMode: 'TICKET_INTERNO',
