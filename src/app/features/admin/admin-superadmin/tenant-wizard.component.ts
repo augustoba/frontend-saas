@@ -24,6 +24,7 @@ import { CatalogPageComponent } from '../../catalog/catalog-page/catalog-page.co
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { FooterComponent } from '../../../shared/components/footer/footer.component';
 import { LAYOUTS, layoutSwatchVars } from '../admin-appearance/admin-appearance.component';
+import { TEMPLATE_LAYOUTS, ensureLayoutFonts } from '../../../core/layouts';
 import { PlanRecord } from '../../../core/services/plan-admin.service';
 import { MODULE_OPTIONS } from '../../../core/models/plan-module.model';
 
@@ -137,6 +138,7 @@ export class TenantWizardComponent {
 
   constructor() {
     this.planAdmin.ensureLoaded();
+    for (const l of TEMPLATE_LAYOUTS) ensureLayoutFonts(l.id);
     // Selecciona el plan "default" apenas carga la lista — sólo la primera
     // vez, para no pisar una elección manual si el listado se recarga.
     effect(() => {

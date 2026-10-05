@@ -130,6 +130,27 @@ export class DiscountService {
     )
   );
 
+  /** Descuentos por parametría vigentes: los únicos que le dan un % a una prenda puntual. */
+  private readonly activeParamDiscounts = computed(() =>
+    this.paramDiscounts().filter(
+      (d) => this.isActive(d) && !!d.groupId && !!d.optionId && d.discountPercent > 0
+    )
+  );
+
+  /**
+   * El % de descuento por parametría vigente que le corresponde a una prenda
+   * (0 = ninguno). Lo usan las plantillas de diseño que marcan precios.
+   */
+  percentForProduct(product: Product): number {
+    let best = 0;
+    for (const d of this.activeParamDiscounts()) {
+      if (productHasParam(product, d.groupId!, d.optionId!) && d.discountPercent > best) {
+        best = d.discountPercent;
+      }
+    }
+    return best;
+  }
+
   // --- Cálculo central ---
 
   computeCartDiscount(items: DiscountCartItem[], ctx: DiscountContext = {}): CartDiscountResult {

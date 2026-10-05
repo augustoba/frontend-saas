@@ -8,6 +8,7 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
 import { FooterComponent } from '../../../shared/components/footer/footer.component';
 import { generateBrandRamp } from '../../../core/utils/color-ramp';
 import { extractLogoColor } from '../../../core/utils/logo-color';
+import { TEMPLATE_LAYOUTS, ensureLayoutFonts } from '../../../core/layouts';
 
 /**
  * Diseños realmente construidos (ver PLAN_SAAS.md Fase 10). Agregar uno acá
@@ -52,6 +53,9 @@ export const LAYOUTS: { id: string; label: string; previewColor: string }[] = [
   { id: 'woostify', label: 'Woostify', previewColor: '#6366f1' },
   // Studio - Layout único asimétrico con imagen diagonal y miniaturas de productos
   { id: 'studio', label: 'Studio', previewColor: '#0d9488' },
+  // Los 20 diseños de plantilla traídos del ecommerce de Ruth (cada uno con
+  // componente propio, ver `core/layouts.ts`).
+  ...TEMPLATE_LAYOUTS.map(({ id, label, previewColor }) => ({ id, label, previewColor })),
 ];
 
 const DEFAULT_PREVIEW_COLOR = '#f97316';
@@ -135,6 +139,9 @@ export class AdminAppearanceComponent {
 
   constructor() {
     this.settingsService.ensureLoaded();
+    // En /admin el `data-layout` global está sacado, así que las miniaturas de
+    // las plantillas necesitan sus fuentes cargadas a mano.
+    for (const l of TEMPLATE_LAYOUTS) ensureLayoutFonts(l.id);
     effect(() => {
       const s = this.settingsService.settings();
       if (!this.touched) {

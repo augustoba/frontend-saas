@@ -136,6 +136,13 @@ export interface SiteSettings {
    */
   mercadoPagoAvailable: boolean;
   /**
+   * Foto del local y página "Nosotros": existen en el ecommerce de Ruth y las
+   * lee la plantilla Mosaico, pero el backend del SaaS todavía no las manda —
+   * opcionales a propósito: sin valor, esos bloques no se dibujan.
+   */
+  storePhotoUrl?: string | null;
+  aboutPageEnabled?: boolean;
+  /**
    * Módulo `POS` habilitado en el plan (Fase 14) — el panel lo usa para
    * decidir si mostrar el punto de venta (kiosco) en el menú.
    */
@@ -272,7 +279,6 @@ export class SettingsService {
 
   constructor() {
     this.applyTheme(DEFAULTS.theme);
-    this.applyLayout(DEFAULTS.layout);
     this.applyBrandColor(DEFAULTS.brandColor);
     this.load();
   }
@@ -290,7 +296,6 @@ export class SettingsService {
         this.statusSignal.set('loaded');
         this.applyFavicon(s.logoUrl || LOGO_FALLBACK);
         this.applyTheme(s.theme);
-        this.applyLayout(s.layout);
         this.applyBrandColor(s.brandColor);
       },
       error: () => this.statusSignal.set('error'),
@@ -312,13 +317,12 @@ export class SettingsService {
   }
 
   /**
-   * Setea `data-layout` en `<html>` — eje independiente de `data-theme` (ver
-   * PLAN_SAAS.md Fase 10). Hoy sólo existe el layout `"classic"`, que es el
-   * único que renderiza la app; es la base para cuando exista un segundo.
+   * Diseño activo de la tienda. `data-layout` en `<html>` NO lo escribe este
+   * service sino `AppComponent`, que lo saca en `/admin`: las plantillas de
+   * `core/layouts.ts` pisan fuentes, radios y paleta (algunas, como Neón o
+   * Cohete, oscurecen el `body`) y el panel no debe heredarlo.
    */
-  private applyLayout(layout: string): void {
-    document.documentElement.setAttribute('data-layout', layout || 'classic');
-  }
+  readonly layout = computed(() => this.settingsSignal().layout || 'classic');
 
   /**
    * Deriva la rampa `--color-brand-*` del color elegido y la aplica inline
@@ -401,7 +405,6 @@ export class SettingsService {
           this.statusSignal.set('loaded');
           this.applyFavicon(s.logoUrl || LOGO_FALLBACK);
           this.applyTheme(s.theme);
-          this.applyLayout(s.layout);
           this.applyBrandColor(s.brandColor);
           this.saving.set(false);
           sub.next(true);

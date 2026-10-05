@@ -18,7 +18,7 @@
       <div class="h-72 overflow-hidden relative bg-stone-100" [ngStyle]="layoutSwatchVars(layout.previewColor)">
         <div class="absolute inset-0 pointer-events-none">
           <div class="absolute top-0 left-0 w-[1280px] origin-top-left" style="transform: scale(0.28)">
-            <app-catalog-page [layoutOverride]="layout.id" [footerColorOverride]="layout.previewColor" />
+            <app-catalog-page [layoutOverride]="layout.id" [footerColorOverride]="layout.previewColor" [preview]="true" />
             <app-footer [footerColorOverride]="layout.previewColor" />
           </div>
         </div>

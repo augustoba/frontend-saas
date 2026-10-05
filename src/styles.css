@@ -23,6 +23,9 @@
   --color-brand-500: #f97316;
   --color-brand-600: #ea580c;
   --color-brand-700: #c2410c;
+  /* Lo usan las plantillas de diseño (core/layouts.ts): sin este tono la clase
+     `*-brand-800` no se genera y el elemento queda sin color. */
+  --color-brand-800: #9a3412;
 
   --color-accent-50: #eef9ff;
   --color-accent-100: #d9f1ff;
@@ -33,10 +36,15 @@
   --color-accent-600: #1281d1;
   --color-accent-700: #1266a8;
 
+  --color-mint-50: #f0fdf6;
   --color-mint-100: #d7f7e9;
+  --color-mint-200: #b3efd3;
   --color-mint-300: #86e6bb;
+  --color-mint-400: #5ed6a3;
   --color-mint-500: #2fbf82;
   --color-mint-600: #219c69;
+  --color-mint-700: #17724c;
+  --color-mint-800: #125e40;
 
   --font-display: "Baloo 2", "Trebuchet MS", ui-rounded, system-ui, sans-serif;
   --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
@@ -112,4 +120,2737 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ==========================================================================
+   MOVIMIENTO
+   Todo sin dependencias: @keyframes + el directive `appReveal`
+   (shared/directives/reveal.directive.ts). Concentrado acá para poder apagarlo
+   de una sola vez con `prefers-reduced-motion`, al final del archivo.
+   ========================================================================== */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(2deg); }
+}
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(.85) rotate(-5deg); }
+  60%  { opacity: 1; transform: scale(1.05) rotate(1.5deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes ken-burns {
+  from { transform: scale(1) translate3d(0, 0, 0); }
+  to   { transform: scale(1.14) translate3d(-2%, -2%, 0); }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg)); }
+  50%      { transform: translate3d(0, -12px, 0) rotate(var(--tilt, 0deg)); }
+}
+
+@keyframes sheen {
+  from { transform: translateX(-140%) skewX(-18deg); }
+  to   { transform: translateX(340%) skewX(-18deg); }
+}
+
+/* Aparición al hacer scroll. `[style.transition-delay]` lo pone el directive,
+   que es lo que produce el efecto escalonado de la grilla. */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity .6s cubic-bezier(.22, 1, .36, 1),
+    transform .7s cubic-bezier(.22, 1, .36, 1);
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* Título que sube desde atrás de una máscara: el contenedor recorta y el hijo
+   entra de abajo. Asumir un único hijo en bloque. */
+.reveal-mask { overflow: hidden; }
+.reveal-mask > * {
+  transform: translate3d(0, 110%, 0);
+  transition: transform .95s cubic-bezier(.19, 1, .22, 1);
+  /* El delay escalonado lo pone el directive en el padre, y no se hereda solo. */
+  transition-delay: inherit;
+}
+.reveal-mask.is-visible > * { transform: none; }
+
+/* Variante con rebote, para el diseño Pop. */
+.reveal-bounce {
+  opacity: 0;
+  transform: translate3d(0, 40px, 0) scale(.9);
+  transition:
+    opacity .45s ease-out,
+    transform .6s cubic-bezier(.34, 1.56, .64, 1);
+}
+.reveal-bounce.is-visible { opacity: 1; transform: none; }
+
+.anim-fade-up   { animation: fade-up .7s cubic-bezier(.22, 1, .36, 1) both; }
+.anim-pop-in    { animation: pop-in .42s cubic-bezier(.34, 1.56, .64, 1) both; }
+.anim-ken-burns { animation: ken-burns 22s ease-in-out infinite alternate; }
+.anim-float     { animation: float-y 5.5s ease-in-out infinite; }
+
+/* Marquesina: el contenedor lleva el contenido duplicado (2 copias iguales) y
+   se corre exactamente 50%, por eso el loop no se nota. */
+.anim-marquee       { display: flex; width: max-content; animation: marquee 30s linear infinite; }
+.anim-marquee:hover { animation-play-state: paused; }
+
+/* La misma marquesina al revés y un poco más lenta: Neón la usa para que las dos
+   franjas se crucen en direcciones opuestas. */
+.anim-marquee-reverse       { display: flex; width: max-content; animation: marquee 36s linear infinite reverse; }
+.anim-marquee-reverse:hover { animation-play-state: paused; }
+
+.wobble-on-hover:hover { animation: wobble .45s ease-in-out; }
+
+/* Brillo que cruza el botón al pasar el mouse */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent);
+  transform: translateX(-140%) skewX(-18deg);
+  pointer-events: none;
+}
+.sheen:hover::after { animation: sheen .85s ease-out; }
+
+/* ==========================================================================
+   DISEÑOS DE TIENDA
+   `data-layout` lo escribe AppComponent en <html> (y lo saca en /admin). Al
+   pisar las variables de tema acá cambian las fuentes, los radios y la paleta
+   de TODA la tienda —header y footer incluidos— sin tocar un solo componente.
+   Ver el registro en core/layouts.ts.
+   ========================================================================== */
+
+/* Los selectores van duplicados a propósito: `html[data-layout]` cubre la
+   tienda entera (header y footer incluidos) y `.tpl-*` cubre el host de cada
+   componente de plantilla, que es lo que usan las miniaturas vivas de
+   /admin/config/diseno — ahí el `data-layout` global puede ser otro diseño. */
+
+/* Editorial: papel hueso, tinta negra, serif de revista, todo a escuadra. */
+[data-layout="editorial"],
+.tpl-editorial {
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fafaf9;
+  --color-brand-100: #f4f3f0;
+  --color-brand-200: #e6e4de;
+  --color-brand-300: #cfcbc1;
+  --color-brand-400: #8a857a;
+  --color-brand-500: #292524;
+  --color-brand-600: #1c1917;
+  --color-brand-700: #0c0a09;
+  --color-brand-800: #000000;
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+}
+
+/* Pop: neo-brutalista. Azul eléctrico sobre crema, bordes y sombras duras. */
+[data-layout="pop"],
+.tpl-pop {
+  --font-display: "Archivo Black", "Baloo 2", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", "Nunito", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fffdf2;
+  --color-brand-100: #fff6cc;
+  --color-brand-200: #ffe98a;
+  --color-brand-300: #ffd83d;
+  --color-brand-400: #6b80ff;
+  --color-brand-500: #3957ff;
+  --color-brand-600: #2440e6;
+  --color-brand-700: #1c31b8;
+  --color-brand-800: #17288f;
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+}
+
+/* ---- Piezas del diseño Editorial (template-editorial.component.html) ----
+   Van acá y no en el CSS del componente por el presupuesto de build:
+   `anyComponentStyle` corta en 8 kB y este archivo global no tiene límite. */
+.ed-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+}
+
+.ed-link {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #78716c;
+  transition: color .25s ease;
+}
+.ed-link:hover { color: #1c1917; }
+.ed-link-on {
+  color: #1c1917;
+  box-shadow: inset 0 -2px 0 0 #1c1917;
+}
+
+.ed-field {
+  width: 100%;
+  border-bottom: 1px solid #d6d3d1;
+  background: transparent;
+  padding-bottom: .4rem;
+  font-size: 13px;
+  color: #1c1917;
+  transition: border-color .25s ease;
+}
+.ed-field:focus { outline: none; border-bottom-color: #1c1917; }
+.ed-field::placeholder { color: #d6d3d1; }
+
+/* Encabezado de sección: título a la izquierda, dato a la derecha, filete abajo */
+.ed-rule {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e7e5e4;
+  padding-bottom: .75rem;
+}
+
+.ed-list {
+  border-bottom: 1px solid #e7e5e4;
+}
+.ed-list > li + li { border-top: 1px solid #e7e5e4; }
+
+/* ---- Piezas del diseño Pop (template-pop.component.html) ---- */
+.pop-field {
+  border: 3px solid #1c1917;
+  background: #fff;
+  padding: .55rem .8rem;
+  font-family: var(--font-display);
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #1c1917;
+  box-shadow: 3px 3px 0 0 #1c1917;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.pop-field:focus {
+  outline: none;
+  background: #fff6cc;
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 0 #1c1917;
+}
+.pop-field::placeholder { color: #a8a29e; }
+
+.pop-chip {
+  border: 3px solid #1c1917;
+  background: #fff;
+  padding: .4rem .9rem;
+  font-family: var(--font-display);
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #1c1917;
+  box-shadow: 3px 3px 0 0 #1c1917;
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+.pop-chip:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 0 #1c1917; }
+.pop-chip-on {
+  background: #3957ff;
+  color: #fff;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 #1c1917;
+}
+
+/* ==========================================================================
+   DISEÑOS DE TIENDA — tanda 2: vidriera / ofertas / fichero / mosaico
+   Mismas reglas que los de arriba: los tokens van duplicados (`html[data-layout]`
+   cubre la tienda entera, header y footer incluidos; `.tpl-*` cubre la miniatura
+   viva de /admin/config/diseno, donde el diseño activo puede ser otro) y las
+   piezas propias de cada plantilla van acá, en el CSS global, por el presupuesto
+   de `anyComponentStyle` (4 kB de aviso, 8 kB de error por componente).
+   ========================================================================== */
+
+/* Vidriera: catálogo por categorías. Crema, mostaza y todo redondeado. */
+[data-layout="vidriera"],
+.tpl-vidriera {
+  --font-display: "Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Karla", "Nunito", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fffcf5;
+  --color-brand-100: #fdf4e3;
+  --color-brand-200: #f9e6c1;
+  --color-brand-300: #f2d193;
+  --color-brand-400: #e8b85e;
+  --color-brand-500: #d99a2b;
+  --color-brand-600: #b87c19;
+  --color-brand-700: #916013;
+  --color-brand-800: #6d4810;
+}
+
+/* Riel que se desliza. Cada tarjeta se lleva su ancho por Tailwind (`w-56`,
+   `sm:w-64`…): acá sólo va el comportamiento del scroll. */
+.vid-rail {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: .75rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.vid-rail::-webkit-scrollbar { display: none; }
+.vid-rail > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* Subrayado "hecho a mano" abajo del título de cada categoría. */
+.vid-underline {
+  position: relative;
+  display: inline-block;
+}
+.vid-underline::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  bottom: -.35rem;
+  height: .4rem;
+  background: var(--color-brand-300);
+  border-radius: 999px 999px 999px 999px / 60% 60% 100% 100%;
+}
+
+/* Ficha chica de categoría, arriba de cada riel. */
+.vid-tag {
+  background: var(--color-brand-100);
+  color: var(--color-brand-700);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+}
+
+/* Ofertas: góndola. Rojo de cartel, tipografía condensada, cajas duras. */
+[data-layout="ofertas"],
+.tpl-ofertas {
+  --font-display: "Barlow Condensed", "Archivo", system-ui, sans-serif;
+  --font-sans: "Barlow", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #ffffff;
+  --color-brand-100: #fff5f5;
+  --color-brand-200: #ffe0e0;
+  --color-brand-300: #ffb8b8;
+  --color-brand-400: #ff7a7a;
+  --color-brand-500: #e11d2e;
+  --color-brand-600: #c1121f;
+  --color-brand-700: #96101a;
+  --color-brand-800: #6d0b13;
+
+  --radius-xs: 0px;
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+  --radius-4xl: 10px;
+}
+
+/* La frase de la promo, en la barra de arriba. */
+.oft-promo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+/* Etiqueta de precio con la esquina cortada, tipo etiqueta de góndola. */
+.oft-tag {
+  font-family: var(--font-display);
+  background: var(--color-brand-600);
+  color: #fff;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: .1rem .5rem;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+}
+
+/* "% off" sobre la foto de una prenda con descuento por parametría. */
+.oft-disc {
+  font-family: var(--font-display);
+  background: var(--color-brand-600);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: .3rem .45rem;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+}
+
+.oft-side-title {
+  font-family: var(--font-display);
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: #44403c;
+}
+
+.oft-field {
+  width: 100%;
+  border: 1px solid #d6d3d1;
+  background: #fff;
+  padding: .5rem .65rem;
+  font-size: 13px;
+  color: #292524;
+}
+.oft-field:focus {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: -1px;
+}
+.oft-field::placeholder { color: #a8a29e; }
+
+/* Fichero: ficha técnica. Papel blanco, azul tinta y monoespaciada. */
+[data-layout="fichero"],
+.tpl-fichero {
+  --font-display: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #ffffff;
+  --color-brand-100: #f5f7fb;
+  --color-brand-200: #e8edf7;
+  --color-brand-300: #ccd8ec;
+  --color-brand-400: #6d8cc4;
+  --color-brand-500: #3f66ab;
+  --color-brand-600: #2b4c8c;
+  --color-brand-700: #1e3a75;
+  --color-brand-800: #14264f;
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+}
+
+/* Rótulo de dato: "EDAD", "TALLES", "CÓDIGO". */
+.fic-key {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: #94a3b8;
+}
+
+/* Fila del catálogo: foto | datos | precio.
+   El markup espera SIEMPRE ese orden de hijos (3ro opcional). */
+.fic-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: .75rem 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-brand-200);
+}
+@media (min-width: 640px) {
+  .fic-row {
+    grid-template-columns: 7rem 1fr auto;
+    gap: 1.5rem;
+  }
+}
+
+/* Chip de talle. `-on` = hay stock, `-off` = agotado. */
+.fic-chip {
+  font-family: var(--font-display);
+  border: 1px solid var(--color-brand-300);
+  background: #fff;
+  color: #334155;
+  font-size: 11px;
+  letter-spacing: .06em;
+  padding: .1rem .4rem;
+}
+.fic-chip-on {
+  border-color: var(--color-brand-500);
+  color: var(--color-brand-700);
+}
+.fic-chip-off {
+  border-style: dashed;
+  color: #cbd5e1;
+  text-decoration: line-through;
+}
+
+/* Mosaico: tablero de piezas. Blanco frío, índigo y un toque de lima. */
+[data-layout="mosaico"],
+.tpl-mosaico {
+  --font-display: "Sora", "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f6f6fe;
+  --color-brand-100: #ecebfd;
+  --color-brand-200: #d9d7fb;
+  --color-brand-300: #bdb9f6;
+  --color-brand-400: #9a93ef;
+  --color-brand-500: #4f46e5;
+  --color-brand-600: #443ad4;
+  --color-brand-700: #3a30b0;
+  --color-brand-800: #2c2585;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
+}
+
+/* Pieza del tablero. Las alturas las da el template con Tailwind (`h-64`,
+   `sm:row-span-2`…); acá va que la foto se coma la pieza. */
+.mos-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-3xl);
+  background: #fff;
+}
+
+/* Foto que ocupa toda la pieza (para las piezas que son sólo imagen + texto). */
+.mos-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Degradé para que el texto se lea arriba de una foto. */
+.mos-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 15, 25, .74), rgba(15, 15, 25, .06) 62%);
+}
+
+/* Texto que va arriba de la foto. */
+.mos-on-media {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, .5);
+}
+
+/* El acento lima, el único color que no sale de la paleta índigo. */
+.mos-lime {
+  background: #c8f169;
+  color: #1a2e05;
+}
+
+/* ==========================================================================
+   DISEÑO "NOVA" (tanda 3) + las piezas de movimiento que trae
+   Nova es el diseño más "de ahora": hero cinematográfico a sangre, gradiente
+   vivo, tarjetas de vidrio, inclinación 3D que sigue al puntero, barra de
+   progreso de scroll y catálogo que sigue cargando solo. Los tokens van
+   duplicados como en el resto (atributo = tienda entera, clase = miniatura).
+   ========================================================================== */
+
+@keyframes aurora-drift {
+  0%   { background-position: 0% 50%; transform: scale(1); }
+  50%  { background-position: 100% 50%; transform: scale(1.08); }
+  100% { background-position: 0% 50%; transform: scale(1); }
+}
+
+@keyframes blur-in {
+  from { opacity: 0; filter: blur(18px); transform: translate3d(0, 26px, 0) scale(1.02); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: .5; transform: scale(1); }
+  50%      { opacity: .85; transform: scale(1.06); }
+}
+
+/* Variantes de `appReveal` que estrena Nova. Mismo contrato que `.reveal`: la
+   clase la pone el directive y `is-visible` la dispara al entrar en pantalla. */
+.reveal-blur {
+  opacity: 0;
+  filter: blur(18px);
+  transform: translate3d(0, 26px, 0) scale(1.02);
+  transition:
+    opacity .7s cubic-bezier(.22, 1, .36, 1),
+    filter .9s ease,
+    transform .95s cubic-bezier(.22, 1, .36, 1);
+}
+.reveal-blur.is-visible { opacity: 1; filter: blur(0); transform: none; }
+
+.reveal-left {
+  opacity: 0;
+  transform: translate3d(-52px, 0, 0);
+  transition:
+    opacity .6s ease,
+    transform .95s cubic-bezier(.19, 1, .22, 1);
+}
+.reveal-left.is-visible { opacity: 1; transform: none; }
+
+.reveal-right {
+  opacity: 0;
+  transform: translate3d(52px, 0, 0);
+  transition:
+    opacity .6s ease,
+    transform .95s cubic-bezier(.19, 1, .22, 1);
+}
+.reveal-right.is-visible { opacity: 1; transform: none; }
+
+.reveal-zoom {
+  opacity: 0;
+  transform: scale(.88);
+  transition:
+    opacity .55s ease,
+    transform .8s cubic-bezier(.34, 1.28, .64, 1);
+}
+.reveal-zoom.is-visible { opacity: 1; transform: none; }
+
+.anim-blur-in { animation: blur-in .9s cubic-bezier(.22, 1, .36, 1) both; }
+.anim-glow    { animation: glow-pulse 6s ease-in-out infinite; }
+
+[data-layout="nova"],
+.tpl-nova {
+  --font-display: "Bricolage Grotesque", "Outfit", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fff5fb;
+  --color-brand-100: #ffe7f6;
+  --color-brand-200: #ffc9ea;
+  --color-brand-300: #ff9dd8;
+  --color-brand-400: #ff5fbd;
+  --color-brand-500: #f0288f;
+  --color-brand-600: #cc0f73;
+  --color-brand-700: #a30b5c;
+  --color-brand-800: #7d0a48;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 28px;
+  --radius-4xl: 34px;
+}
+
+/* Gradiente vivo del hero: tres manchas que se corren solas. Va detrás del
+   carrusel para que, si el local todavía no subió fotos, el hero igual se vea. */
+.nova-mesh {
+  position: absolute;
+  inset: -25%;
+  background-image:
+    radial-gradient(38% 42% at 18% 26%, var(--color-brand-400) 0%, transparent 62%),
+    radial-gradient(34% 38% at 82% 18%, #22d3ee 0%, transparent 60%),
+    radial-gradient(46% 48% at 62% 84%, var(--color-brand-600) 0%, transparent 64%);
+  background-size: 180% 180%;
+  filter: blur(44px) saturate(135%);
+  opacity: .55;
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Oscurecido de abajo hacia arriba: el texto se lee sobre cualquier foto. */
+.nova-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(12, 10, 25, .88) 0%,
+    rgba(12, 10, 25, .5) 46%,
+    rgba(12, 10, 25, .12) 100%
+  );
+  pointer-events: none;
+}
+
+/* Vidrio: para los chips y las cajas que van arriba de una foto. */
+.nova-glass {
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .24);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.nova-glass-light {
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(255, 255, 255, .9);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+/* Sección oscura: la usa el cierre del diseño y las bandas kinéticas. */
+.nova-ink {
+  background: #0c0a19;
+  color: #f6f4ff;
+}
+
+/* El acento cian, el único color que no sale de la paleta magenta. */
+.nova-cyan {
+  background: #22d3ee;
+  color: #06323c;
+}
+
+.nova-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border-radius: 999px;
+  padding: .4rem .85rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+/* Barra de progreso de lectura: `--p` (0..1) la escribe appScrollProgress. */
+.nova-progress {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 30;
+  pointer-events: none;
+}
+.nova-progress > span {
+  display: block;
+  height: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--p, 0));
+  background: linear-gradient(90deg, var(--color-brand-500), #22d3ee);
+}
+
+/* Inclinación 3D: la rotación la maneja `appTilt` escribiendo `--rx`/`--ry`.
+   `is-tilting` acorta la transición para que siga al puntero sin arrastrar. */
+.tilt-3d {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .5s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+}
+.tilt-3d.is-tilting { transition: transform .06s linear; }
+
+/* Brillo que sigue al puntero (`--mx`/`--my`, también de appTilt). */
+.tilt-shine { position: relative; }
+.tilt-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    340px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, .34),
+    transparent 62%
+  );
+  transition: opacity .35s ease;
+}
+.tilt-shine:hover::after { opacity: 1; }
+
+/* En Nova las fotos del carrusel se mueven solas (Ken Burns lento). El `img` no
+   lleva transform propio en `hero-carousel`, así que no pisa el deslizamiento
+   del track: la animación es del `<img>` de adentro, no del contenedor. */
+[data-layout="nova"] app-hero-carousel img,
+.tpl-nova app-hero-carousel img {
+  animation: ken-burns 26s ease-in-out infinite alternate;
+}
+
+/* ==========================================================================
+   DISEÑO "NEÓN" (tanda 4) — el disruptivo
+   Es uno de los DOS diseños oscuros de la tienda (el otro es Cohete). El fondo
+   de página sale de
+   `--color-brand-50` (el body lo usa como `background-color`), así que
+   pisándolo acá se oscurece toda la tienda; el header y el footer compartidos,
+   que tienen superficies claras escritas a mano, se oscurecen con las reglas
+   acotadas que están más abajo (llevan `[data-layout="neon"]` adelante para
+   ganarle en especificidad a las utilidades de Tailwind).
+   Todo lo que brilla o se mueve —grilla, anillos de los banners, shimmer y el
+   flip de las prendas— se apaga con `prefers-reduced-motion`.
+   ========================================================================== */
+
+/* El ángulo del anillo que gira. Se registra como propiedad tipada para que el
+   navegador pueda interpolarlo; donde no exista `@property`, el degradado queda
+   quieto (se ve igual, sólo no gira). */
+@property --neon-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes marquee-reverse {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+/* La grilla del fondo se corre sola hacia arriba, como un tablero en movimiento. */
+@keyframes grid-slide {
+  from { background-position: 0 0; }
+  to   { background-position: 0 56px; }
+}
+
+@keyframes neon-ring-spin {
+  to { --neon-angle: 360deg; }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: 1; }
+}
+
+@keyframes shimmer-x {
+  from { transform: translateX(-130%) skewX(-16deg); }
+  to   { transform: translateX(330%) skewX(-16deg); }
+}
+
+[data-layout="neon"],
+.tpl-neon {
+  --font-display: "Orbitron", "Archivo Black", system-ui, sans-serif;
+  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
+
+  /* Rampa invertida a propósito: el 50 es el fondo (casi negro) y el 500 el
+     cian neón. El pie usa `bg-brand-700`, que también queda oscuro. */
+  --color-brand-50: #06060b;
+  --color-brand-100: #0e0e1a;
+  --color-brand-200: #1d1d33;
+  --color-brand-300: #2e2e4d;
+  --color-brand-400: #67e8f9;
+  --color-brand-500: #22d3ee;
+  --color-brand-600: #06b6d4;
+  --color-brand-700: #0a0a14;
+  --color-brand-800: #14142a;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+  --radius-4xl: 14px;
+}
+
+/* --- El chrome compartido, oscurecido sólo para este diseño --- */
+
+[data-layout="neon"] body { color: #e8e8f4; }
+
+[data-layout="neon"] app-header header {
+  background: rgba(6, 6, 11, .85);
+  border-bottom-color: rgba(34, 211, 238, .2);
+  box-shadow: none;
+}
+[data-layout="neon"] app-header header nav a { color: #b9b9d0; }
+/* El botón del carrito queda cian: el texto blanco no se leería. */
+[data-layout="neon"] app-header header .bg-brand-500 { color: #04121a; }
+
+[data-layout="neon"] app-footer footer { background: #08080f; }
+[data-layout="neon"] app-footer footer p,
+[data-layout="neon"] app-footer footer span,
+[data-layout="neon"] app-footer footer a { color: #d8d8ec; }
+
+/* --- Piezas del diseño --- */
+
+/* Tablero luminoso del fondo (hero y cierres). Se desvanece hacia los bordes. */
+.neon-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, .14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, .14) 1px, transparent 1px);
+  background-size: 56px 56px;
+  animation: grid-slide 6s linear infinite;
+  mask-image: radial-gradient(72% 62% at 50% 28%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(72% 62% at 50% 28%, #000 0%, transparent 78%);
+  pointer-events: none;
+}
+
+/* Cartel de neón: el resplandor del texto. */
+.neon-glow {
+  text-shadow:
+    0 0 6px rgba(34, 211, 238, .75),
+    0 0 22px rgba(34, 211, 238, .45),
+    0 0 48px rgba(34, 211, 238, .25);
+}
+.neon-glow-yellow {
+  text-shadow:
+    0 0 6px rgba(234, 255, 0, .8),
+    0 0 24px rgba(234, 255, 0, .45);
+}
+
+/* Superficie oscura con borde y resplandor cian. */
+.neon-box {
+  background: linear-gradient(180deg, rgba(20, 20, 42, .92), rgba(8, 8, 16, .92));
+  border: 1px solid rgba(34, 211, 238, .26);
+  box-shadow: 0 18px 55px -32px rgba(34, 211, 238, .55);
+}
+
+/* Anillo de luz que gira alrededor de la pieza (se usa en los banners de promo). */
+.neon-ring { position: relative; }
+.neon-ring::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--neon-angle),
+    #22d3ee,
+    #eaff00,
+    #a855f7,
+    #22d3ee
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: neon-ring-spin 5.5s linear infinite;
+  pointer-events: none;
+}
+
+/* Reflejo que cruza la pieza cada pocos segundos. */
+.neon-shimmer { position: relative; overflow: hidden; }
+.neon-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .34), transparent);
+  animation: shimmer-x 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* El disco con el % real del descuento. */
+.neon-disc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: radial-gradient(circle at 32% 26%, #eaff00, #a3e635 72%);
+  color: #10160a;
+  font-family: var(--font-display);
+  font-weight: 800;
+  box-shadow: 0 0 34px -6px rgba(234, 255, 0, .85);
+}
+
+.neon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid rgba(34, 211, 238, .38);
+  background: rgba(34, 211, 238, .1);
+  color: var(--color-brand-400);
+  border-radius: 999px;
+  padding: .35rem .8rem;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
+/* Franja inclinada: la usa la cinta de promos, que va torcida a propósito. */
+.neon-ribbon { transform: rotate(-2.5deg); }
+
+/* --- Prendas que se dan vuelta (flip 3D) ---
+   El dorso muestra la descripción y los talles con stock reales. Sólo gira
+   donde hay puntero fino: en táctil (o con `prefers-reduced-motion`) el dorso no
+   existe y la misma info se ve abajo, siempre visible, en `.flip-extra`. */
+.flip { perspective: 1100px; }
+.flip-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .8s cubic-bezier(.22, 1, .36, 1);
+}
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  overflow: hidden;
+}
+.flip-extra { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .flip:hover .flip-inner,
+  .flip:focus-within .flip-inner { transform: rotateY(180deg); }
+}
+@media (hover: none), (pointer: coarse) {
+  .flip-back { display: none; }
+  .flip-extra { display: block; }
+}
+
+/* ==========================================================================
+   DISEÑOS PARA CHICOS (tanda 5): caramelo / cohete / jungla / crayon
+   Cuatro diseños con el mismo espíritu que Neón (mucho movimiento) pero para
+   público infantil, y cada uno con SU movimiento, no con el de otro:
+   caramelo gira y rebota, cohete titila y vuela, jungla se mece y deja huellas,
+   crayon se dibuja solo. Todos los efectos se apagan con
+   `prefers-reduced-motion` (último bloque del archivo).
+   ========================================================================== */
+
+/* --- Movimiento compartido por la tanda --- */
+
+@keyframes spin-slow {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -16px, 0); }
+}
+
+@keyframes jelly {
+  0%   { transform: scale(1, 1); }
+  25%  { transform: scale(1.08, .92); }
+  45%  { transform: scale(.94, 1.06); }
+  65%  { transform: scale(1.04, .97); }
+  85%  { transform: scale(.99, 1.01); }
+  100% { transform: scale(1, 1); }
+}
+
+@keyframes wave-x {
+  to { background-position-x: 240px; }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: .3; }
+  50%      { opacity: 1; }
+}
+
+@keyframes fly-across {
+  0%   { transform: translate3d(-14vw, 14vh, 0) rotate(16deg); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(114vw, -20vh, 0) rotate(16deg); opacity: 0; }
+}
+
+@keyframes shooting {
+  0%   { transform: translate3d(0, 0, 0) rotate(32deg); opacity: 0; }
+  6%   { opacity: 1; }
+  45%  { opacity: 0; }
+  100% { transform: translate3d(58vw, 34vh, 0) rotate(32deg); opacity: 0; }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50%      { transform: rotate(2.5deg); }
+}
+
+@keyframes march-x {
+  to { background-position-x: 224px; }
+}
+
+/* El trazo que se dibuja solo (Crayón): cada forma del SVG lleva
+   `pathLength="1"` para que `stroke-dasharray: 1` cubra el trazo completo. */
+@keyframes draw-in {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes wobble-slow {
+  0%, 100% { transform: rotate(-1.6deg) translate3d(0, 0, 0); }
+  50%      { transform: rotate(1.6deg) translate3d(0, -4px, 0); }
+}
+
+/* ---------- CARAMELO: caramelo pastel, todo redondo y blandito ---------- */
+
+[data-layout="caramelo"],
+.tpl-caramelo {
+  --font-display: "Grandstander", "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Quicksand", ui-rounded, system-ui, sans-serif;
+
+  --color-brand-50: #f2fffb;
+  --color-brand-100: #dcfff5;
+  --color-brand-200: #b8f7e6;
+  --color-brand-300: #86ecd4;
+  --color-brand-400: #4fd9bd;
+  --color-brand-500: #22c39f;
+  --color-brand-600: #17a183;
+  --color-brand-700: #127f68;
+  --color-brand-800: #0e5f4f;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --radius-2xl: 32px;
+  --radius-3xl: 40px;
+  --radius-4xl: 48px;
+}
+
+/* Rayos que giran detrás de lo que haya que destacar (el logo). */
+.candy-sun {
+  position: absolute;
+  inset: -35%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, .75) 0deg 8deg,
+    rgba(255, 255, 255, 0) 8deg 16deg
+  );
+  animation: spin-slow 44s linear infinite;
+  pointer-events: none;
+}
+
+/* Manchas blanditas que flotan. El color y el tamaño los pone el template. */
+.candy-blob {
+  position: absolute;
+  border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
+  animation: bob 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Borde de nube: la sección se apoya en ondas que corren solas. */
+.candy-scallop {
+  height: 26px;
+  background-image: radial-gradient(circle at 50% 0, var(--color-brand-200) 0 14px, transparent 15px);
+  background-size: 48px 26px;
+  background-repeat: repeat-x;
+  animation: wave-x 14s linear infinite;
+}
+
+/* Se aplasta como un caramelo al pasar el mouse. */
+.jelly-hover { transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+.jelly-hover:hover { animation: jelly .6s ease; }
+
+.candy-pink   { background: #ffd6ec; color: #7a1e52; }
+.candy-lilac  { background: #e4dcff; color: #3f2a7a; }
+.candy-yellow { background: #fff2b8; color: #6b4e00; }
+
+.candy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border-radius: 999px;
+  background: #fff;
+  padding: .45rem 1rem;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-brand-700);
+  box-shadow: 0 6px 16px -10px rgba(14, 95, 79, .6);
+}
+
+/* ---------- COHETE: noche espacial, estrellas y naves ---------- */
+
+[data-layout="cohete"],
+.tpl-cohete {
+  --font-display: "Bungee", "Luckiest Guy", system-ui, sans-serif;
+  --font-sans: "Varela Round", ui-rounded, system-ui, sans-serif;
+
+  --color-brand-50: #0a0620;
+  --color-brand-100: #160f3d;
+  --color-brand-200: #241a5e;
+  --color-brand-300: #8b8cf0;
+  --color-brand-400: #a5b4fc;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #3730a3;
+  --color-brand-800: #1e1b4b;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 30px;
+  --radius-3xl: 36px;
+  --radius-4xl: 44px;
+}
+
+.space-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(125% 95% at 50% 0%, #2b1a6b 0%, #140b38 52%, #05030f 100%);
+}
+
+/* Cohete también es oscuro (su rampa arranca en noche), así que el chrome
+   compartido lleva las mismas reglas acotadas que Neón. */
+[data-layout="cohete"] body { color: #eef0ff; }
+
+[data-layout="cohete"] app-header header {
+  background: rgba(10, 6, 32, .85);
+  border-bottom-color: rgba(255, 255, 255, .12);
+  box-shadow: none;
+}
+[data-layout="cohete"] app-header header nav a { color: #c7c9f5; }
+
+[data-layout="cohete"] app-footer footer { background: #0d0828; }
+[data-layout="cohete"] app-footer footer p,
+[data-layout="cohete"] app-footer footer span,
+[data-layout="cohete"] app-footer footer a { color: #dcdefb; }
+
+/* Cielo estrellado: capas de puntitos que titilan juntas. */
+.space-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 22% 28%, #fff 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 68% 62%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 44% 82%, #cfe0ff 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 86% 18%, #fff 50%, transparent 51%);
+  background-size: 190px 190px, 240px 240px, 300px 300px, 340px 340px;
+  animation: twinkle 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Órbita punteada girando lento. */
+.space-ring {
+  position: absolute;
+  border: 1px dashed rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  animation: spin-slow 70s linear infinite;
+  pointer-events: none;
+}
+
+/* La nave que cruza la pantalla cada tanto. */
+.rocket {
+  position: absolute;
+  animation: fly-across 24s linear infinite;
+  pointer-events: none;
+}
+
+/* Estrella fugaz: una raya que se va. */
+.shooting-star {
+  position: absolute;
+  width: 130px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fff);
+  animation: shooting 9s ease-in infinite;
+  pointer-events: none;
+}
+
+.space-yellow { background: #ffe066; color: #4a3300; }
+
+.space-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  background: rgba(255, 255, 255, .1);
+  padding: .4rem .9rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ---------- JUNGLA: selva con hojas que se mecen y huellas ---------- */
+
+[data-layout="jungla"],
+.tpl-jungla {
+  --font-display: "Luckiest Guy", "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Comic Neue", "Nunito", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f7fdf2;
+  --color-brand-100: #e9f9d9;
+  --color-brand-200: #d0f0b4;
+  --color-brand-300: #a8e07f;
+  --color-brand-400: #79c94f;
+  --color-brand-500: #4aa32b;
+  --color-brand-600: #377f21;
+  --color-brand-700: #2a611b;
+  --color-brand-800: #1e4714;
+}
+
+/* Arboleda de arriba: hojas redondas que se mecen como si hubiera viento. */
+.jungla-top {
+  height: 44px;
+  background-image:
+    radial-gradient(circle at 50% 100%, var(--color-brand-600) 0 15px, transparent 16px),
+    radial-gradient(circle at 50% 100%, var(--color-brand-400) 0 22px, transparent 23px);
+  background-size: 58px 44px;
+  background-repeat: repeat-x;
+  transform-origin: 50% 0;
+  animation: sway 7s ease-in-out infinite;
+}
+.jungla-bottom {
+  height: 44px;
+  background-image:
+    radial-gradient(circle at 50% 100%, var(--color-brand-600) 0 15px, transparent 16px),
+    radial-gradient(circle at 50% 100%, var(--color-brand-400) 0 22px, transparent 23px);
+  background-size: 58px 44px;
+  background-repeat: repeat-x;
+  transform: rotate(180deg);
+  transform-origin: 50% 100%;
+  animation: sway 8s ease-in-out infinite;
+}
+
+/* Se mece sola (adornos) o al pasar el mouse (piezas). */
+.sway { animation: sway 6s ease-in-out infinite; transform-origin: 50% 0; }
+.sway-hover { transition: transform .4s cubic-bezier(.34, 1.56, .64, 1); }
+.sway-hover:hover { animation: sway 1.3s ease-in-out infinite; }
+
+/* Camino de huellas que va marchando. */
+.jungla-trail {
+  height: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='40' viewBox='0 0 56 40'%3E%3Cg fill='%232a611b' opacity='.35'%3E%3Cellipse cx='28' cy='26' rx='9' ry='11'/%3E%3Ccircle cx='18' cy='15' r='4'/%3E%3Ccircle cx='26' cy='10' r='4'/%3E%3Ccircle cx='34' cy='11' r='4'/%3E%3Ccircle cx='41' cy='17' r='3.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  animation: march-x 22s linear infinite;
+}
+
+/* Hoja: la forma sale del border-radius, sin imágenes. */
+.jungla-leaf {
+  border-radius: 0 100% 0 100%;
+  background: var(--color-brand-500);
+  box-shadow: inset -6px -6px 0 0 rgba(0, 0, 0, .08);
+}
+
+.jungla-sand { background: #f7e7c8; color: #6b4a17; }
+
+.jungla-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border-radius: 999px;
+  background: #fff;
+  padding: .4rem .9rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-brand-700);
+  box-shadow: 0 4px 0 0 var(--color-brand-300);
+}
+
+/* ---------- CRAYON: dibujado a mano con crayón sobre papel ---------- */
+
+[data-layout="crayon"],
+.tpl-crayon {
+  --font-display: "Patrick Hand", "Comic Neue", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Comfortaa", ui-rounded, system-ui, sans-serif;
+
+  --color-brand-50: #fffdf7;
+  --color-brand-100: #fff8e6;
+  --color-brand-200: #ffedc2;
+  --color-brand-300: #ffd98a;
+  --color-brand-400: #ffc24d;
+  --color-brand-500: #f59e0b;
+  --color-brand-600: #d97706;
+  --color-brand-700: #a35708;
+  --color-brand-800: #7a4106;
+}
+
+/* Borde tembleque, como dibujado a mano alzada. */
+.crayon-border {
+  border: 3px solid #2b2b2b;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: #fffdf7;
+}
+
+.crayon-border-soft {
+  border: 2px dashed #2b2b2b;
+  border-radius: 18px 6px 20px 8px / 8px 20px 6px 18px;
+}
+
+/* Las formas del SVG se dibujan solas al entrar en pantalla. */
+.crayon-draw path,
+.crayon-draw circle,
+.crayon-draw ellipse,
+.crayon-draw line,
+.crayon-draw polyline,
+.crayon-draw rect {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw-in 1.9s ease-out forwards;
+  fill: none;
+  stroke: #2b2b2b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Subrayado garabateado. Toma el color del texto (`currentColor`). */
+.crayon-scribble { position: relative; display: inline-block; }
+.crayon-scribble::after {
+  content: "";
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  bottom: -.4rem;
+  height: .5rem;
+  background: currentColor;
+  opacity: .35;
+  border-radius: 60% 40% 55% 45% / 100% 100% 60% 60%;
+  transform: rotate(-1.2deg);
+}
+
+.wobble-slow { animation: wobble-slow 5.5s ease-in-out infinite; }
+
+/* Cinta adhesiva para pegar las cosas al papel. */
+.crayon-tape {
+  position: absolute;
+  width: 74px;
+  height: 22px;
+  background: rgba(250, 240, 180, .85);
+  border-left: 1px dashed rgba(0, 0, 0, .12);
+  border-right: 1px dashed rgba(0, 0, 0, .12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+}
+
+.crayon-red    { background: #ffd9d6; color: #8f1d12; }
+.crayon-blue   { background: #d7e8ff; color: #123a75; }
+.crayon-green  { background: #dcf7d4; color: #1d5c14; }
+.crayon-yellow { background: #fff0bf; color: #7a4c00; }
+
+.crayon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 2px solid #2b2b2b;
+  border-radius: 14px 4px 16px 6px / 6px 16px 4px 14px;
+  background: #fff;
+  padding: .35rem .8rem;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: #2b2b2b;
+}
+
+/* ==========================================================================
+   DISEÑO "ATELIER" — lujo sobrio
+   Marfil, tinta y oro: filetes de un píxel, serif fina (Cormorant) para los
+   títulos y Jost para el resto. Sin sombras ni esquinas redondeadas.
+   ========================================================================== */
+
+[data-layout="atelier"],
+.tpl-atelier {
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #faf7f1;
+  --color-brand-100: #f4efe6;
+  --color-brand-200: #e7ddc9;
+  --color-brand-300: #d9c8a9;
+  --color-brand-400: #c9ae83;
+  --color-brand-500: #b08d57;
+  --color-brand-600: #96733f;
+  --color-brand-700: #6f5426;
+  --color-brand-800: #4a3717;
+}
+
+/* El nombre de la tienda, con un filete de oro centrado debajo. */
+.bou-underline {
+  position: relative;
+  padding-bottom: 1rem;
+}
+.bou-underline::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 84px;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-brand-400) 25%,
+    var(--color-brand-400) 75%,
+    transparent
+  );
+}
+
+/* Link de salón: versalitas chicas y subrayado sólo al pasar el mouse.
+   Sin color propio: hereda, así los `text-stone-*` de la plantilla mandan. */
+.bou-link {
+  font-size: 11px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  text-underline-offset: 5px;
+  transition: color .25s ease;
+}
+.bou-link:hover {
+  color: var(--color-brand-600);
+  text-decoration: underline;
+}
+
+/* El punto de oro que separa los links del nav. */
+.bou-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-brand-400);
+  vertical-align: middle;
+}
+
+/* Etiqueta de sección. Sin color propio: hereda y acepta `text-stone-*`. */
+.bou-label {
+  font-size: 10px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+}
+
+/* Renglón de sección: número/etiqueta a la izquierda, dato a la derecha. */
+.bou-rule {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: .8rem;
+  border-bottom: 1px solid #d6d3d1;
+}
+
+/* Campo de formulario: sólo un renglón, como en un libro de visitas. */
+.bou-field {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #d6d3d1;
+  border-radius: 0;
+  background: transparent;
+  padding: .45rem .1rem;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .25s ease;
+}
+.bou-field:focus {
+  border-bottom-color: var(--color-brand-500);
+}
+
+/* Botón "ver más": marco de tinta que se rellena al pasar el mouse. */
+.bou-more {
+  border: 1px solid #1c1917;
+  background: transparent;
+  padding: .75rem 2rem;
+  font-size: 11px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  transition: background .3s ease, color .3s ease;
+}
+.bou-more:hover {
+  background: #1c1917;
+  color: #faf7f1;
+}
+
+/* ==========================================================================
+   DISEÑO "FERIA" — puesto de mercado
+   Papel kraft, toldo rayado, madera y cintas adhesivas: todo un poco torcido
+   a mano. Alfa Slab One para los carteles, Work Sans para leer.
+   ========================================================================== */
+
+[data-layout="feria"],
+.tpl-feria {
+  --font-display: "Alfa Slab One", Georgia, serif;
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #fdf6ec;
+  --color-brand-100: #f9ead7;
+  --color-brand-200: #f0d9b8;
+  --color-brand-300: #e2bd8c;
+  --color-brand-400: #d18f4f;
+  --color-brand-500: #c2571d;
+  --color-brand-600: #a34413;
+  --color-brand-700: #7c3410;
+  --color-brand-800: #5a250b;
+}
+
+/* El toldo del puesto, de rayas, hecho con gradiente: se estira a lo ancho. */
+.feria-awning {
+  height: 16px;
+  background: repeating-linear-gradient(90deg, #c2571d 0 26px, #fdf6ec 26px 52px);
+  border-bottom: 2px solid #7c3410;
+}
+.feria-awning-short {
+  height: 10px;
+  border-bottom-width: 1px;
+}
+
+/* El cartel del nombre: madera clara, borde grueso, sombra dura y un grado
+   de inclinación como si estuviera colgado. */
+.feria-board {
+  display: inline-block;
+  transform: rotate(-2deg);
+  border: 3px solid #7c3410;
+  border-radius: 4px;
+  background: #f9ead7;
+  padding: .6rem;
+  box-shadow: 5px 6px 0 rgba(124, 52, 16, .35);
+}
+
+.feria-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #a34413;
+}
+
+/* El papelito prendido al puesto: hoja clara con sombra corrida. */
+.feria-note {
+  border: 1px solid #e2bd8c;
+  border-radius: 4px;
+  background: #fffdf8;
+  padding: .5rem .9rem;
+  box-shadow: 3px 4px 0 rgba(162, 68, 19, .18);
+}
+
+/* La cinta adhesiva que pega el papelito (dentro de un `relative`). */
+.feria-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 64px;
+  height: 20px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(240, 217, 184, .92);
+  border-left: 1px dashed rgba(124, 52, 16, .28);
+  border-right: 1px dashed rgba(124, 52, 16, .28);
+}
+
+/* Doble clase a propósito: los papeles y las tarjetas van dentro de
+   `appReveal`, y `.reveal.is-visible { transform: none }` (0,2,0) pisaría
+   un `.feria-tilt-a` limpio (0,1,0). */
+.feria-tilt-a.feria-tilt-a { transform: rotate(-1.4deg); }
+.feria-tilt-b.feria-tilt-b { transform: rotate(1.2deg); }
+
+/* Marco del hero: como un listón de madera con la sombra del toldo. */
+.feria-frame {
+  border: 4px solid #7c3410;
+  border-radius: 8px;
+  background: #fffdf8;
+  padding: .6rem;
+  box-shadow: 6px 7px 0 rgba(124, 52, 16, .28);
+}
+
+.feria-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1.5px solid #7c3410;
+  border-radius: 999px;
+  background: #fffdf8;
+  padding: .4rem .95rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a250b;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.feria-chip-on {
+  background: #c2571d;
+  border-color: #a34413;
+  color: #fff8ef;
+}
+
+/* Renglón punteado, como el borde de un remito. */
+.feria-rule {
+  margin-bottom: 1.6rem;
+  padding-bottom: .9rem;
+  border-bottom: 2px dashed #e2bd8c;
+}
+
+/* Riel horizontal: los favoritos se deslizan como en la feria. */
+.feria-rail {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: .75rem;
+  scroll-snap-type: x proximity;
+}
+.feria-rail > * { scroll-snap-align: start; }
+
+.feria-panel {
+  border: 2px solid #e2bd8c;
+  border-radius: 6px;
+  background: #fffdf8;
+  box-shadow: 4px 5px 0 rgba(162, 68, 19, .12);
+  padding: 1.25rem;
+}
+
+.feria-field {
+  border: 2px solid #e2bd8c;
+  border-radius: 6px;
+  background: #fffdf8;
+  padding: .45rem .7rem;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: #5a250b;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.feria-field:focus {
+  border-color: #c2571d;
+  box-shadow: 0 0 0 3px rgba(194, 87, 29, .15);
+}
+
+/* ==========================================================================
+   DISEÑO "PERIÓDICO" — la tapa del diario
+   Papel viejo, reglas dobles, versalitas y clasificados. Old Standard para
+   leer; la gótica (UnifrakturMaguntia) queda sólo para la cabecera porque
+   `--font-display` también viste los nombres de producto.
+   ========================================================================== */
+
+[data-layout="periodico"],
+.tpl-periodico {
+  --font-display: "Old Standard TT", "Times New Roman", Georgia, serif;
+  --font-sans: "Libre Franklin", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f7f2e7;
+  --color-brand-100: #f1e9d8;
+  --color-brand-200: #e4d8bf;
+  --color-brand-300: #cbb896;
+  --color-brand-400: #a98f66;
+  --color-brand-500: #57503f;
+  --color-brand-600: #3d3729;
+  --color-brand-700: #26221c;
+  --color-brand-800: #1a1611;
+}
+
+/* La cabecera (sólo el h1 del nombre) va en gótica de diario. */
+[data-layout="periodico"] header h1,
+.tpl-periodico header h1 {
+  font-family: "UnifrakturMaguntia", "Old Standard TT", serif;
+  font-weight: 400;
+  letter-spacing: .01em;
+}
+
+/* Línea de datos del tope: fecha, edición, precio. */
+.per-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .4rem 1.5rem;
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/* La regla doble de la tapa: 3px + 1px, como un separador de sección. */
+.per-double-rule {
+  position: relative;
+  height: 3px;
+  background: #26221c;
+}
+.per-double-rule::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #26221c;
+}
+
+/* "Último momento": la volanta con etiqueta negra. */
+.per-extra {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+}
+.per-extra-tag {
+  display: inline-block;
+  margin-right: .5rem;
+  padding: .15rem .5rem;
+  background: #26221c;
+  color: #f7f2e7;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Epígrafe de la foto de tapa. */
+.per-caption {
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #57503f;
+}
+
+/* Título de sección: versalitas y regla de diario. */
+.per-section-title {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding-bottom: .35rem;
+  border-bottom: 3px double #26221c;
+}
+
+/* "Lo más leído": el número del ranking, bien grande y en serif. */
+.per-rank {
+  min-width: 2ch;
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+  color: #a98f66;
+}
+
+/* Cada fila del ranking: se lee como una columna de diario. */
+.per-read {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .7rem .25rem;
+  border-bottom: 1px dotted #cbb896;
+  transition: background .2s ease;
+}
+.per-read:hover { background: rgba(203, 184, 150, .18); }
+
+/* Campos y chips de los clasificados: marco negro, cero adornos. */
+.per-field {
+  border: 1px solid #26221c;
+  border-radius: 0;
+  background: #fffdf6;
+  padding: .4rem .6rem;
+  font-size: 13px;
+  outline: none;
+  transition: box-shadow .2s ease;
+}
+.per-field:focus { box-shadow: 3px 3px 0 rgba(38, 34, 28, .22); }
+
+.per-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #26221c;
+  background: transparent;
+  padding: .3rem .8rem;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: #26221c;
+  transition: background .2s ease, color .2s ease;
+}
+.per-chip-on {
+  background: #26221c;
+  color: #f7f2e7;
+}
+
+/* ==========================================================================
+   DISEÑO "RETRO 90s" — Memphis
+   Violeta, amarillo, verde y coral; formas geométricas flotando y sombras
+   duras. Rammetto One para los títulos, DM Sans para leer.
+   ========================================================================== */
+
+[data-layout="retro"],
+.tpl-retro {
+  --font-display: "Rammetto One", "Archivo Black", system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f4f1fa;
+  --color-brand-100: #ece5fb;
+  --color-brand-200: #ddd0f7;
+  --color-brand-300: #c4aef2;
+  --color-brand-400: #a583ea;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #5b21b6;
+  --color-brand-800: #4c1d95;
+}
+
+/* Formas de Memphis: círculo, triángulo y cuadrado flotando en el header
+   (la posición la ponen las utilidades `absolute` + `top/left` del markup). */
+.mel-shape {
+  display: block;
+  pointer-events: none;
+}
+.mel-circle {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #fbbf24;
+  opacity: .85;
+}
+.mel-triangle {
+  width: 0;
+  height: 0;
+  border-left: 38px solid transparent;
+  border-right: 38px solid transparent;
+  border-bottom: 62px solid #34d399;
+  opacity: .8;
+}
+.mel-square {
+  width: 58px;
+  height: 58px;
+  background: #fb7185;
+  opacity: .85;
+}
+
+/* La llave `spin-slow` ya existía; la utilidad no. Gira lentísimo, sin ruido. */
+.spin-slow { animation: spin-slow 44s linear infinite; }
+
+/* El sticker de la cabecera: amarillo, torcido y con sombra dura. */
+.mel-sticker {
+  display: inline-block;
+  transform: rotate(-2deg);
+  border: 2px solid #1c1917;
+  border-radius: 999px;
+  background: #fbbf24;
+  padding: .2rem .9rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  box-shadow: 3px 3px 0 #1c1917;
+}
+
+/* La banda violeta con la cinta infinita de promos. */
+.mel-band {
+  overflow: hidden;
+  background: #7c3aed;
+  border-top: 3px solid #1c1917;
+  border-bottom: 3px solid #1c1917;
+}
+/* El markup duplica el contenido: por eso `-50%` cierra perfecto el ciclo. */
+.mel-ticker {
+  display: flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+
+/* Chips estilo sticker: borde de tinta y sombra corrida. */
+.mel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 2px solid #1c1917;
+  border-radius: 999px;
+  padding: .4rem 1rem;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c1917;
+  box-shadow: 4px 4px 0 #1c1917;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.mel-chip:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #1c1917;
+}
+.mel-chip-a { background: #fbbf24; }
+.mel-chip-b { background: #6ee7b7; }
+.mel-chip-c { background: #fda4af; }
+/* Va al final: tiene que ganarle a los colores de arriba. */
+.mel-chip-on {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.mel-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+/* La barra rayada que acompaña a los títulos de sección. */
+.mel-rule {
+  flex: 1;
+  height: 10px;
+  align-self: center;
+  background: repeating-linear-gradient(90deg, #7c3aed 0 12px, transparent 12px 22px);
+  opacity: .45;
+}
+
+/* Doble clase a propósito: van dentro de `appReveal variant="bounce"`, y
+   `.reveal-bounce.is-visible { transform: none }` (0,2,0) pisaría un
+   `.mel-tilt-a` limpio (0,1,0). */
+.mel-tilt-a.mel-tilt-a { transform: rotate(-1.6deg); }
+.mel-tilt-b.mel-tilt-b { transform: rotate(1.4deg); }
+
+.mel-field {
+  border: 2px solid #1c1917;
+  border-radius: 12px;
+  background: #fff;
+  padding: .45rem .75rem;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 3px 3px 0 #ddd0f7;
+  transition: box-shadow .2s ease;
+}
+.mel-field:focus { box-shadow: 3px 3px 0 #c4aef2; }
+
+/* ==========================================================================
+   DISEÑO "SUIZO" — retícula estricta
+   Blanco, negro y un único rojo. Archivo para todo, Space Mono para las
+   fichas técnicas, campos que son apenas un renglón.
+   ========================================================================== */
+
+[data-layout="suizo"],
+.tpl-suizo {
+  --font-display: "Archivo", "Helvetica Neue", Helvetica, sans-serif;
+  --font-sans: "Archivo", "Helvetica Neue", Helvetica, sans-serif;
+
+  --color-brand-50: #ffffff;
+  --color-brand-100: #f5f5f5;
+  --color-brand-200: #e5e5e5;
+  --color-brand-300: #d4d4d4;
+  --color-brand-400: #f87171;
+  --color-brand-500: #ef4444;
+  --color-brand-600: #dc2626;
+  --color-brand-700: #991b1b;
+  --color-brand-800: #7f1d1d;
+}
+
+/* La ficha técnica: mono, versalitas y sin color propio, así hereda blanco
+   dentro de la franja roja y negro fuera. */
+.swiss-meta {
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.swiss-link {
+  font-family: "Space Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color .2s ease;
+}
+.swiss-link:hover { color: var(--color-brand-600); }
+
+.swiss-field {
+  border: 0;
+  border-bottom: 2px solid #a3a3a3;
+  border-radius: 0;
+  background: transparent;
+  padding: .4rem .1rem;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s ease;
+}
+.swiss-field:focus { border-bottom-color: var(--color-brand-600); }
+
+/* Dentro de la tarjeta de prenda: los datos técnicos van en monoespaciada,
+   como el pie de una ficha. */
+.swiss-card-meta {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+}
+.swiss-card-price {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-brand-600);
+}
+
+/* ==========================================================================
+   DISEÑO "CANCHA" — club de barrio
+   Verde de campo, líneas de cal, tablero de LED y chips numerados como una
+   formación. Russo One para los carteles, Titillium Web para leer.
+   ========================================================================== */
+
+[data-layout="cancha"],
+.tpl-cancha {
+  --font-display: "Russo One", "Archivo Black", system-ui, sans-serif;
+  --font-sans: "Titillium Web", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f4faf4;
+  --color-brand-100: #e3f3e6;
+  --color-brand-200: #c6e6cd;
+  --color-brand-300: #8fd39d;
+  --color-brand-400: #4fae67;
+  --color-brand-500: #1e7f3c;
+  --color-brand-600: #166534;
+  --color-brand-700: #14532d;
+  --color-brand-800: #0b2e17;
+}
+
+.cancha-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: #14532d;
+}
+
+/* El tablero del estadio: fondo oscuro y dígitos de LED. */
+.cancha-board {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  border: 2px solid #0b2e17;
+  border-radius: 8px;
+  background: #0f1a12;
+  padding: .45rem .9rem;
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .55);
+}
+.cancha-board-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #8fd39d;
+}
+.cancha-board-num {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #6ee7a0;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(110, 231, 160, .55);
+}
+
+/* El pizarrón del vestuario: las promos van en tiza. */
+.cancha-chalkboard {
+  background: #0f1a12;
+  border-top: 3px solid #0b2e17;
+  border-bottom: 3px solid #0b2e17;
+  color: #e3f3e6;
+}
+
+/* Marco de la red: el borde verde lo pone el markup (`border-4 border-brand-600`);
+   acá va la malla en diagonal que asoma por el margen. */
+.cancha-net {
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(45deg, rgba(22, 101, 52, .22) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(-45deg, rgba(22, 101, 52, .22) 0 2px, transparent 2px 10px);
+}
+
+/* La cancha: césped cortado, línea de medio y círculo central, todo con
+   gradientes (sin imágenes). */
+.cancha-pitch {
+  position: relative;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 61px, rgba(255, 255, 255, .45) 61px 63px, transparent 63px),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255, 255, 255, .45) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    repeating-linear-gradient(90deg, #166534 0 44px, #145c2f 44px 88px);
+}
+.cancha-pitch-title {
+  color: #f4faf4;
+  letter-spacing: .06em;
+}
+
+/* Chip de convocatoria: círculo numerado + etiqueta. */
+.cancha-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  border: 2px solid #166534;
+  border-radius: 999px;
+  background: #fff;
+  padding: .3rem .9rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #14532d;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.cancha-chip-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #166534;
+  color: #f4faf4;
+  font-size: 11px;
+  font-weight: 700;
+}
+.cancha-chip-on {
+  background: #166534;
+  border-color: #14532d;
+  color: #f4faf4;
+}
+.cancha-chip-on .cancha-chip-num {
+  background: #f4faf4;
+  color: #14532d;
+}
+
+.cancha-field {
+  border: 2px solid #c6e6cd;
+  border-radius: 8px;
+  background: #fff;
+  padding: .45rem .7rem;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.cancha-field:focus {
+  border-color: #1e7f3c;
+  box-shadow: 0 0 0 3px rgba(30, 127, 60, .14);
+}
+
+/* ==========================================================================
+   DISEÑO "CINE" — sala de barrio
+   Bordó oscuro, oro y foquitos de marquesina. Bebas Neue para los afiches,
+   Poppins para leer. Como en Neón, la rampa de marca va invertida: el 50 es
+   el fondo oscuro y el 300/400 el dorado.
+   ========================================================================== */
+
+/* Los foquitos de la marquesina corren de a un punto por vez. */
+@keyframes cine-chase {
+  from { background-position-x: 0; }
+  to   { background-position-x: 22px; }
+}
+
+/* El parpadeo de las estrellas de la crítica. */
+@keyframes cine-twinkle {
+  0%, 100% { opacity: .35; text-shadow: none; }
+  50%      { opacity: 1; text-shadow: 0 0 12px rgba(245, 217, 140, .8); }
+}
+
+[data-layout="cine"],
+.tpl-cine {
+  --font-display: "Bebas Neue", "Archivo Black", system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  /* Rampa oscura: el 50 es el fondo bordó, el 300/400 el dorado de textos y
+     acentos, y el 700 queda bien oscuro para el pie. */
+  --color-brand-50: #150a10;
+  --color-brand-100: #221019;
+  --color-brand-200: #2f1622;
+  --color-brand-300: #f5d98c;
+  --color-brand-400: #e0b95c;
+  --color-brand-500: #c9973f;
+  --color-brand-600: #a87b2e;
+  --color-brand-700: #2a0e18;
+  --color-brand-800: #5c3d10;
+}
+
+/* --- El chrome compartido, oscurecido sólo para este diseño --- */
+
+[data-layout="cine"] body { color: #f6ead2; }
+
+[data-layout="cine"] app-header header {
+  background: rgba(21, 10, 16, .88);
+  border-bottom-color: rgba(201, 151, 63, .28);
+  box-shadow: none;
+}
+[data-layout="cine"] app-header header nav a { color: #d8c39a; }
+/* El botón del carrito queda dorado: el texto claro no se leería. */
+[data-layout="cine"] app-header header .bg-brand-500 { color: #150a10; }
+
+[data-layout="cine"] app-footer footer { background: #1d0c13; }
+[data-layout="cine"] app-footer footer p,
+[data-layout="cine"] app-footer footer span,
+[data-layout="cine"] app-footer footer a { color: #e6d3ac; }
+
+/* --- Piezas del diseño --- */
+
+/* El frente de la sala: un resplandor cálido detrás de la marquesina. */
+.cine-header {
+  background: radial-gradient(120% 90% at 50% 0%, #2a1019 0%, transparent 70%);
+}
+
+/* La marquesina: marco dorado, fondo bordó y foquitos arriba y abajo. */
+.cine-marquee {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid #c9973f;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2f1622, #1a0b12);
+  box-shadow: 0 22px 60px -34px rgba(201, 151, 63, .55);
+}
+
+/* La tira de foquitos: puntos dorados que persiguen alrededor del cartel. */
+.cine-bulbs {
+  height: 14px;
+  background-image: radial-gradient(circle, #f5d98c 2.5px, transparent 3.5px);
+  background-size: 22px 14px;
+  background-position: 0 50%;
+  background-repeat: repeat-x;
+  animation: cine-chase 1.6s linear infinite;
+  opacity: .9;
+}
+
+/* Logo de la sala: en un círculo con aro dorado. */
+.cine-logo {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #c9973f;
+  box-shadow: 0 0 26px -6px rgba(245, 217, 140, .7);
+}
+@media (min-width: 640px) {
+  .cine-logo { width: 92px; height: 92px; }
+}
+
+.cine-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: #c9973f;
+}
+
+/* El nombre en tipografía de afiche, dorado con resplandor. */
+.cine-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: .95;
+  letter-spacing: .03em;
+  color: #f5d98c;
+  text-shadow: 0 0 18px rgba(245, 217, 140, .35), 0 4px 0 rgba(0, 0, 0, .35);
+}
+
+/* Las cinco estrellas de la crítica, parpadeando escalonadas. */
+.cine-stars {
+  display: flex;
+  gap: .4rem;
+  font-size: 20px;
+  line-height: 1;
+  color: #f5d98c;
+}
+.cine-stars span { animation: cine-twinkle 2.4s ease-in-out infinite; }
+.cine-stars span:nth-child(2) { animation-delay: .3s; }
+.cine-stars span:nth-child(3) { animation-delay: .6s; }
+.cine-stars span:nth-child(4) { animation-delay: .9s; }
+.cine-stars span:nth-child(5) { animation-delay: 1.2s; }
+
+/* El contador de la sala: marco de puntos dorados. */
+.cine-count {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  border: 2px dashed rgba(201, 151, 63, .6);
+  border-radius: 12px;
+  padding: .6rem 1rem;
+}
+.cine-count-num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: #f5d98c;
+}
+.cine-count-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: #c9973f;
+}
+
+.cine-compra {
+  margin-top: 1rem;
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: #c9a86a;
+}
+
+/* "En cartelera": la banda de promos, separada por estrellitas. */
+.cine-band {
+  background: #1a0b12;
+  border-top: 1px solid rgba(201, 151, 63, .3);
+  border-bottom: 1px solid rgba(201, 151, 63, .3);
+}
+.cine-band-tag {
+  border: 1px solid #c9973f;
+  border-radius: 999px;
+  padding: .2rem .8rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #f5d98c;
+}
+.cine-star-sm {
+  font-size: 11px;
+  color: #c9973f;
+}
+
+/* El escenario: cortina de terciopelo arriba y foquitos al pie. */
+.cine-stage {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid #c9973f;
+  border-radius: 14px;
+  background: #1a0b12;
+  box-shadow: 0 22px 60px -34px rgba(201, 151, 63, .5);
+}
+
+/* La cortina: pliegues de terciopelo en gradiente repetido. */
+.cine-curtain {
+  height: 26px;
+  background: repeating-linear-gradient(
+    90deg,
+    #5c1020 0 13px,
+    #7a1428 13px 26px,
+    #4a0c1a 26px 39px
+  );
+  border-bottom: 2px solid #c9973f;
+}
+
+.cine-caption {
+  margin-top: .8rem;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #c9973f;
+}
+
+/* Chips: aro dorado; el seleccionado se rellena de oro. */
+.cine-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid #c9973f;
+  border-radius: 999px;
+  background: transparent;
+  padding: .35rem .95rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0b95c;
+  transition: background .2s ease, color .2s ease;
+}
+.cine-chip-on {
+  background: #c9973f;
+  border-color: #e0b95c;
+  color: #1a0b12;
+}
+
+/* Cabecera de sección: título de afiche + píldora con el conteo. */
+.cine-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem 1rem;
+  margin-bottom: 1.6rem;
+}
+.cine-title-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+  letter-spacing: .04em;
+  color: #f5d98c;
+}
+.cine-pill {
+  border: 1px solid rgba(201, 151, 63, .45);
+  border-radius: 999px;
+  padding: .25rem .8rem;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #c9973f;
+}
+
+/* El panel de filtros: superficie oscura con filete dorado. */
+.cine-panel {
+  border: 1px solid rgba(201, 151, 63, .35);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #221019, #180a10);
+  padding: 1.1rem 1.25rem;
+}
+
+.cine-field {
+  border: 1px solid rgba(201, 151, 63, .4);
+  border-radius: 8px;
+  background: rgba(21, 10, 16, .6);
+  padding: .45rem .7rem;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #f6ead2;
+  color-scheme: dark;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.cine-field:focus {
+  border-color: #c9973f;
+  box-shadow: 0 0 0 3px rgba(201, 151, 63, .18);
+}
+.cine-field::placeholder { color: rgba(246, 234, 210, .4); }
+/* Las opciones del select nativo no heredan el fondo: van oscuras a mano. */
+.cine-field option { background: #221019; color: #f6ead2; }
+
+/* El estado vacío/error: como una función suspendida, enmarcada. */
+.cine-state {
+  border: 2px dashed rgba(201, 151, 63, .4);
+  border-radius: 14px;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+/* ==========================================================================
+   DISEÑO "PLAYA" — verano todo el año
+   Turquesa y coral, olas que separan las secciones y postales enmarcadas.
+   Pacifico para los títulos (como escrito en la arena), Outfit para leer.
+   ========================================================================== */
+
+[data-layout="playa"],
+.tpl-playa {
+  --font-display: "Pacifico", "Comic Sans MS", cursive;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #f0fbfa;
+  --color-brand-100: #d8f3f0;
+  --color-brand-200: #b5e8e3;
+  --color-brand-300: #7fd8d1;
+  --color-brand-400: #45c2b9;
+  --color-brand-500: #0d9488;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+  --color-brand-800: #0d3d3a;
+}
+
+/* El cielo del header: degradé turquesa de arriba abajo. */
+.playa-sky {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0b7d72 0%, #0d9488 45%, #45c2b9 100%);
+}
+
+/* El sol: círculo difuso que respira (usa la llave `float-y` de siempre). */
+.playa-sun {
+  position: absolute;
+  top: 14px;
+  right: 8%;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff7cf 0%, rgba(255, 214, 130, .85) 45%, rgba(255, 214, 130, 0) 72%);
+  animation: float-y 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* El logo, en un aro blanco como un medallón. */
+.playa-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 10px 26px -12px rgba(9, 60, 55, .6);
+}
+@media (min-width: 640px) {
+  .playa-logo { width: 96px; height: 96px; }
+}
+
+.playa-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+/* Sobre el cielo turquesa, el kicker va blanco. */
+.playa-sky .playa-kicker { color: rgba(255, 255, 255, .92); }
+
+/* El nombre, en script como escrito con el dedo en la arena. */
+.playa-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 7vw, 4.6rem);
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 4px 0 rgba(13, 148, 136, .35), 0 14px 34px rgba(6, 60, 55, .45);
+}
+
+.playa-note {
+  display: inline-block;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  padding: .35rem 1.1rem;
+  font-size: 13px;
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+/* La ola: el svg llena con `currentColor`, así el color lo pone la utilidad
+   `text-brand-*` del markup. El -1px evita la costura entre secciones. */
+.playa-wave {
+  display: block;
+  line-height: 0;
+  margin-bottom: -1px;
+}
+
+/* La sombrilla coral de las promos. */
+.playa-promos {
+  background: linear-gradient(90deg, #ff6f61, #f2724f 55%, #ff8a5c);
+}
+
+/* La postal del hero: marco blanco, sombra turquesa y un grado de inclinación. */
+.playa-frame {
+  border: 8px solid #fff;
+  border-radius: 1.75rem;
+  background: #fff;
+  transform: rotate(-.8deg);
+  box-shadow: 0 26px 60px -34px rgba(13, 148, 136, .65);
+}
+
+.playa-caption {
+  margin-top: .9rem;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+
+/* Chips de marea. */
+.playa-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid #b5e8e3;
+  border-radius: 999px;
+  background: #fff;
+  padding: .35rem .95rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #115e59;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.playa-chip-on {
+  background: #0d9488;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+/* Títulos de sección en script y píldora de conteo. */
+.playa-title-lg {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+  line-height: 1.15;
+  color: #115e59;
+}
+.playa-pill {
+  border-radius: 999px;
+  background: #d8f3f0;
+  padding: .25rem .85rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+/* La franja donde vive el catálogo: la playa baja hasta acá. */
+.playa-shore { background: #d8f3f0; }
+
+/* Desfase alternado de los destacados (como puestos en la arena). */
+@media (min-width: 640px) {
+  .playa-offset { margin-top: 1.4rem; }
+}
+
+.playa-field {
+  border: 2px solid #b5e8e3;
+  border-radius: 12px;
+  background: #fff;
+  padding: .45rem .7rem;
+  font-size: 14px;
+  color: #134e4a;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.playa-field:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, .15);
+}
+
+/* Accesibilidad: quien pide menos movimiento ve todo en su lugar, sin animar.
+   Va al final y con !important porque es el interruptor general. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-bounce,
+  .reveal-blur,
+  .reveal-left,
+  .reveal-right,
+  .reveal-zoom,
+  .reveal-mask > * {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .anim-fade-up,
+  .anim-pop-in,
+  .anim-blur-in,
+  .anim-ken-burns,
+  .anim-float,
+  .anim-glow,
+  .anim-marquee,
+  .anim-marquee-reverse,
+  .nova-mesh,
+  .neon-grid,
+  .neon-ring::before,
+  .neon-shimmer::after,
+  .candy-sun,
+  .candy-blob,
+  .candy-scallop,
+  .jelly-hover:hover,
+  .space-stars,
+  .space-ring,
+  .rocket,
+  .shooting-star,
+  .jungla-top,
+  .jungla-bottom,
+  .jungla-trail,
+  .sway,
+  .sway-hover:hover,
+  .wobble-slow,
+  .wobble-on-hover:hover,
+  .sheen:hover::after,
+  .cine-bulbs,
+  .cine-stars span,
+  .mel-ticker,
+  .playa-sun,
+  .spin-slow,
+  [data-layout="nova"] app-hero-carousel img,
+  .tpl-nova app-hero-carousel img {
+    animation: none !important;
+  }
+  /* El tilt queda plano: sin rotación ni brillo que siga al puntero. */
+  .tilt-3d {
+    transform: none !important;
+    transition: none !important;
+  }
+  .tilt-shine::after { display: none !important; }
+
+  /* Y las prendas no se dan vuelta: se ve la info de la cara de abajo. */
+  .flip-inner {
+    transform: none !important;
+    transition: none !important;
+  }
+  .flip-back { display: none !important; }
+  .flip-extra { display: block !important; }
+
+  /* Los dibujos de Crayón no se dibujan solos: tienen que quedar ya trazados
+     (si sólo apagáramos la animación quedarían con el guion corrido, o sea
+     invisibles). */
+  .crayon-draw path,
+  .crayon-draw circle,
+  .crayon-draw ellipse,
+  .crayon-draw line,
+  .crayon-draw polyline,
+  .crayon-draw rect {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }

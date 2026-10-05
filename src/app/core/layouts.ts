@@ -1,0 +1,234 @@
+/**
+ * Diseños "de plantilla" (traídos del ecommerce de Ruth). A diferencia de los
+ * diseños propios del SaaS —que son ramas `@if` dentro de
+ * `catalog-page.component.html` y sólo cambian la portada—, cada uno de estos
+ * tiene un componente propio en `features/catalog/templates/` que es dueño de
+ * TODO el markup de la home (hero, destacados, filtros y grilla), más un bloque
+ * `[data-layout="id"], .tpl-id` en `styles.css` con sus fuentes, radios y paleta.
+ *
+ * Para agregar uno nuevo: (1) sumar la entrada acá, (2) crear el componente de
+ * plantilla y su `@case` en `catalog-page.component.html`, (3) sumar el id al
+ * `@Pattern` de `SiteSettingsDtos.AppearanceRequest` y `TenantAdminDtos` en el
+ * backend — si no está ahí, el PUT devuelve 400 aunque el frontend lo ofrezca.
+ *
+ * "Boutique" de Ruth se llama acá "Atelier": el SaaS ya tenía su propio
+ * `boutique` (Minna) y los ids no pueden chocar.
+ */
+export interface LayoutOption {
+  id: string;
+  label: string;
+  /** En qué se diferencia de los otros. */
+  blurb: string;
+  /** Color de acento de la miniatura, fijo para que se distingan entre sí. */
+  previewColor: string;
+  /**
+   * Tipografías del diseño, como `<link>` de Google Fonts. Se inyectan con
+   * `ensureLayoutFonts` y no están en `index.html`, así la tienda no baja
+   * fuentes que no usa.
+   */
+  fontsHref?: string;
+}
+
+export const TEMPLATE_LAYOUTS: LayoutOption[] = [
+  {
+    id: 'editorial',
+    label: 'Editorial',
+    blurb: 'Tipo revista: título enorme a la izquierda, foto a sangre y grilla asimétrica sin marcos.',
+    previewColor: '#1c1917',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Inter:wght@300;400;500;600&display=swap',
+  },
+  {
+    id: 'pop',
+    label: 'Pop',
+    blurb: 'Bien infantil y ruidoso: bordes gruesos, sombras duras, calcomanías rotadas y marquesina.',
+    previewColor: '#3957ff',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap',
+  },
+  {
+    id: 'vidriera',
+    label: 'Vidriera',
+    blurb:
+      'La home como catálogo por categorías: un riel que se desliza por cada público (bebé, nena, nene) y el catálogo completo al final.',
+    previewColor: '#d99a2b',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Karla:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'ofertas',
+    label: 'Ofertas',
+    blurb:
+      'Sin hero: arriba la barra con las promos que cargaste en el panel, filtros en columna y grilla apretada de 4 con el precio grande.',
+    previewColor: '#e11d2e',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap',
+  },
+  {
+    id: 'fichero',
+    label: 'Fichero',
+    blurb:
+      'Ficha técnica: una prenda destacada en grande con su descripción y sus talles, y el catálogo en filas en vez de grilla.',
+    previewColor: '#1e3a8a',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'mosaico',
+    label: 'Mosaico',
+    blurb:
+      'Un tablero de piezas de distinto tamaño: carrusel, foto del local, tu "sobre nosotros" y una categoría, con la grilla abajo.',
+    previewColor: '#4f46e5',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'nova',
+    label: 'Nova',
+    blurb:
+      'El más de ahora: hero a pantalla completa con la foto en movimiento, vidrio, tarjetas que se inclinan con el mouse y el catálogo que sigue cargando solo.',
+    previewColor: '#f0288f',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap',
+  },
+  {
+    id: 'neon',
+    label: 'Neón',
+    blurb:
+      'El disruptivo: fondo oscuro con grilla luminosa, tipografía arcade, banners de promo que giran y brillan, y las prendas que se dan vuelta al pasar el mouse.',
+    previewColor: '#22d3ee',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rubik:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'caramelo',
+    label: 'Caramelo',
+    blurb:
+      'Para los más chicos: rayos que giran detrás del logo, manchas pastel que flotan, ondas que corren y tarjetas que se aplastan como un caramelo.',
+    previewColor: '#22c39f',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Grandstander:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap',
+  },
+  {
+    id: 'cohete',
+    label: 'Cohete',
+    blurb:
+      'Un viaje espacial: cielo estrellado que titila, órbitas que giran, una nave que cruza la pantalla y estrellas fugaces.',
+    previewColor: '#6366f1',
+    fontsHref: 'https://fonts.googleapis.com/css2?family=Bungee&family=Varela+Round&display=swap',
+  },
+  {
+    id: 'jungla',
+    label: 'Jungla',
+    blurb:
+      'Aventura en la selva: hojas que se mecen como si hubiera viento, un camino de huellas que marcha solo y tarjetas que se balancean.',
+    previewColor: '#4aa32b',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Comic+Neue:wght@400;700&display=swap',
+  },
+  {
+    id: 'crayon',
+    label: 'Crayón',
+    blurb:
+      'Dibujado a mano sobre papel: los garabatos se trazan solos al bajar, bordes tembleques, cintas adhesivas y letra de chico.',
+    previewColor: '#f59e0b',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Comfortaa:wght@400;500;600;700&display=swap',
+  },
+  {
+    id: 'atelier',
+    label: 'Atelier',
+    blurb:
+      'Casa de moda: mucho aire, tipografía serif, filetes finos y dorado apenas, sin una sola caja de color.',
+    previewColor: '#b08d57',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap',
+  },
+  {
+    id: 'feria',
+    label: 'Feria',
+    blurb:
+      'Puesto de feria: toldo rayado, carteles de cartón con cinta adhesiva, tipografía de sello y papel kraft.',
+    previewColor: '#c2571d',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Work+Sans:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'periodico',
+    label: 'Periódico',
+    blurb:
+      'Primera plana: cabecera de diario, doble filete, columnas y el catálogo como ranking numerado en vez de grilla.',
+    previewColor: '#26221c',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Libre+Franklin:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'retro',
+    label: 'Retro 90',
+    blurb:
+      'Memphis noventoso: violeta eléctrico, figuras geométricas que flotan, calcomanías con sombra dura y cinta que corre.',
+    previewColor: '#7c3aed',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Rammetto+One&family=DM+Sans:wght@400;500;700&display=swap',
+  },
+  {
+    id: 'suizo',
+    label: 'Suizo',
+    blurb:
+      'Grilla suiza estricta: números de sección, tipografía grotesca, rojo de acento y cero adornos.',
+    previewColor: '#d92b1e',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap',
+  },
+  {
+    id: 'cancha',
+    label: 'Cancha',
+    blurb:
+      'Club de barrio: tablero de LED con el conteo real, pizarra de vestuario, red de arco y chips con número de camiseta.',
+    previewColor: '#1e7f3c',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Russo+One&family=Titillium+Web:wght@300;400;600;700&display=swap',
+  },
+  {
+    id: 'cine',
+    label: 'Cine',
+    blurb:
+      'Función de tarde: marquesina con foquitos que persiguen, cortina de terciopelo, estrellas de la crítica y letras de afiche.',
+    previewColor: '#8c1030',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600;700&display=swap',
+  },
+  {
+    id: 'playa',
+    label: 'Playa',
+    blurb:
+      'Verano: degradé de mar, sol que flota, olas que cortan las secciones, promos color coral y fotos con marco blanco.',
+    previewColor: '#0ea5a0',
+    fontsHref:
+      'https://fonts.googleapis.com/css2?family=Pacifico&family=Outfit:wght@300;400;500;600;700&display=swap',
+  },
+];
+
+export function isTemplateLayout(id: string | null | undefined): boolean {
+  return !!id && TEMPLATE_LAYOUTS.some((l) => l.id === id);
+}
+
+export function layoutById(id: string | null | undefined): LayoutOption | undefined {
+  return TEMPLATE_LAYOUTS.find((l) => l.id === id);
+}
+
+/**
+ * Carga las Google Fonts del diseño una sola vez por id. La llama
+ * `AppComponent` con el diseño activo, y "Apariencia" con todos (en `/admin`
+ * el `data-layout` global está sacado, así que sin esto las miniaturas se
+ * verían con la tipografía del sistema).
+ */
+export function ensureLayoutFonts(layoutId: string): void {
+  const href = layoutById(layoutId)?.fontsHref;
+  if (!href || document.querySelector(`link[data-layout-fonts="${layoutId}"]`)) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  link.setAttribute('data-layout-fonts', layoutId);
+  document.head.appendChild(link);
+}

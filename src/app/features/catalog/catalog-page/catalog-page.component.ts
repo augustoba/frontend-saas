@@ -12,22 +12,29 @@ import { SettingsService } from '../../../core/services/settings.service';
 import { GENERIC_LOGO_PLACEHOLDER } from '../../../core/utils/generic-logo';
 import { HeroSlidesService } from '../../../core/services/hero-slides.service';
 import { PageBlocksService } from '../../../core/services/page-blocks.service';
-import { productHasParam } from '../../../core/models/product.model';
+import { Product, productHasParam } from '../../../core/models/product.model';
+import { PAYMENT_LABELS } from '../../../core/models/order.model';
+import { Discount, DiscountKind } from '../../../core/models/discount.model';
+import { DiscountService } from '../../../core/services/discount.service';
+import { isTemplateLayout } from '../../../core/layouts';
+import { CatalogView, PromoLine, SortOrder } from '../catalog-view';
+import { TEMPLATE_COMPONENTS } from '../templates/template-components';
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [FormsModule, RouterLink, ProductCardComponent, HeroCarouselComponent, SkeletonComponent, LogoComponent],
+  imports: [FormsModule, RouterLink, ProductCardComponent, HeroCarouselComponent, SkeletonComponent, LogoComponent, TEMPLATE_COMPONENTS],
   templateUrl: './catalog-page.component.html',
   styleUrl: './catalog-page.component.css',
   host: { '[style.background-color]': 'pageBg()' },
 })
-export class CatalogPageComponent {
+export class CatalogPageComponent implements CatalogView {
   private readonly productService = inject(ProductService);
   private readonly paramService = inject(ParamService);
   private readonly sizeScaleService = inject(SizeScaleService);
   private readonly settingsService = inject(SettingsService);
   private readonly heroSlidesService = inject(HeroSlidesService);
   private readonly pageBlocksService = inject(PageBlocksService);
+  private readonly discountService = inject(DiscountService);
 
   /**
    * `undefined` = usar el nombre de `SiteSettings` de siempre; string = el
@@ -78,6 +85,74 @@ export class CatalogPageComponent {
    */
   readonly layout = computed(() => this.layoutOverride() ?? this.settingsService.settings().layout);
   /**
+   * true = el diseño es una de las plantillas con componente propio
+   * (`core/layouts.ts`, traídas del ecommerce de Ruth): la home entera la
+   * dibuja ese componente con `vm`, en vez de las ramas `@if` del template.
+   */
+  readonly isTemplateLayout = computed(() => isTemplateLayout(this.layout()));
+
+  /**
+   * Modo miniatura: pocas prendas y sin "lo más vendido". Lo usan las
+   * miniaturas de "Apariencia" y del asistente "Crear tienda", que muestran
+   * todos los diseños a la vez — sin este recorte cada una dibujaría el
+   * catálogo completo.
+   */
+  readonly preview = input(false);
+
+  /** Se pasa a las plantillas como un único view-model. */
+  readonly vm: CatalogView = this;
+
+  /** Todos los datos del local: "sobre nosotros", dirección, redes, medios de pago. */
+  readonly settings = this.settingsService.settings;
+
+  /**
+   * Promos vigentes con el texto ya armado, para las plantillas que tienen
+   * barra de ofertas. Sale de `/api/discounts` (público); "vigente" lo decide
+   * el backend (`status === 'ACTIVO'`) y si el campo no viene se cae a
+   * `enabled`. Orden por tipo, no por fecha, para que la barra no salte.
+   */
+  readonly promos = computed<PromoLine[]>(() =>
+    this.discountService
+      .discounts()
+      .filter((d) => (d.status ? d.status === 'ACTIVO' : d.enabled))
+      .sort((a, b) => PROMO_ORDER.indexOf(a.kind) - PROMO_ORDER.indexOf(b.kind))
+      .map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        text: this.promoText(d),
+        detail: d.detail?.trim() || null,
+        percent: d.discountPercent,
+        endsLabel: promoEndsLabel(d.endsAt),
+      }))
+  );
+
+  /** Frase de una promo: el texto que cargó el dueño o, si no puso, uno armado con sus datos. */
+  private promoText(d: Discount): string {
+    const label = d.label?.trim();
+    if (label) return label;
+    switch (d.kind) {
+      case 'MONTO':
+        return `Compra mayor a ${formatArs(d.minAmount ?? 0)} → ${d.discountPercent}% off`;
+      case 'ENVIO_GRATIS':
+        return `Envío gratis desde ${formatArs(d.minAmount ?? 0)}`;
+      case 'PARAMETRO': {
+        const opt = this.paramService.labelFor(d.groupId ?? '', d.optionId ?? '');
+        return `${opt || 'Selección'} ${d.discountPercent}% off`;
+      }
+      case 'PAGO': {
+        const names = (d.paymentMethods ?? []).map((m) => PAYMENT_LABELS[m]).join(' o ');
+        return `${d.discountPercent}% pagando con ${names || 'el medio que elijas'}`;
+      }
+      default:
+        return `${d.discountPercent}% off`;
+    }
+  }
+
+  discountPercentFor(product: Product): number {
+    return this.discountService.percentForProduct(product);
+  }
+
+  /**
    * `layout()` acotado a las variantes que conoce `ProductCardComponent`
    * (fallback: `'classic'`) — `"boutique"` (Minna) usa la tarjeta `"editorial"`
    * (foto lisa, sin marco); el resto de los layouts usan la tarjeta clásica.
@@ -113,7 +188,9 @@ export class CatalogPageComponent {
   readonly catalogStatus = this.productService.catalogStatus;
   readonly reloadCatalog = () => this.productService.reloadCatalog();
   /** Los más vendidos — se muestran arriba de la grilla si no hay filtros activos. */
-  readonly bestSellers = this.productService.bestSellers;
+  readonly bestSellers = computed<Product[]>(() =>
+    this.preview() ? [] : this.productService.bestSellers()
+  );
 
   /** Grupos de parametrías que se muestran como filtro */
   readonly filterGroups = this.paramService.catalogGroups;
@@ -154,7 +231,7 @@ export class CatalogPageComponent {
   readonly minPrice = signal<number | null>(null);
   readonly maxPrice = signal<number | null>(null);
   /** Orden de la grilla: 'novedades' respeta el orden del backend (más nuevos primero). */
-  readonly sortBy = signal<'novedades' | 'precio-asc' | 'precio-desc'>('novedades');
+  readonly sortBy = signal<SortOrder>('novedades');
 
   setMinPrice(value: string): void {
     const n = Number(value);
@@ -200,9 +277,15 @@ export class CatalogPageComponent {
 
   /** Paginación client-side: cuántos productos se muestran (crece con "Ver más"). */
   private readonly PAGE_SIZE = 12;
+  /** En miniatura alcanzan unas pocas prendas para que se vea cómo arma la grilla. */
+  private readonly PREVIEW_SIZE = 4;
   readonly shownCount = signal(this.PAGE_SIZE);
-  readonly visibleProducts = computed(() => this.filteredProducts().slice(0, this.shownCount()));
-  readonly hasMore = computed(() => this.filteredProducts().length > this.shownCount());
+  readonly visibleProducts = computed(() =>
+    this.filteredProducts().slice(0, this.preview() ? this.PREVIEW_SIZE : this.shownCount())
+  );
+  readonly hasMore = computed(
+    () => !this.preview() && this.filteredProducts().length > this.shownCount()
+  );
   showMore(): void {
     this.shownCount.update((n) => n + this.PAGE_SIZE);
   }
@@ -248,4 +331,24 @@ export class CatalogPageComponent {
   scrollToCatalog(): void {
     document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+}
+
+/** Orden fijo de la barra de promos: por tipo, no por cuándo se cargó cada una. */
+const PROMO_ORDER: DiscountKind[] = ['MONTO', 'ENVIO_GRATIS', 'PARAMETRO', 'PAGO'];
+
+/**
+ * "Hasta el 15/10" a partir de la fecha de fin (`YYYY-MM-DD`). Se corta el
+ * string a mano y no con `new Date()`: `new Date('2026-10-15')` es medianoche
+ * UTC y en Argentina (UTC-3) cae el 14.
+ */
+function promoEndsLabel(endsAt: string | null | undefined): string | null {
+  const iso = endsAt?.trim();
+  if (!iso) return null;
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) return null;
+  return `Hasta el ${day}/${month}`;
+}
+
+function formatArs(value: number): string {
+  return '$' + Math.round(value).toLocaleString('es-AR');
 }

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { HeaderComponent } from './shared/components/header/header.component';
@@ -6,6 +6,8 @@ import { FooterComponent } from './shared/components/footer/footer.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confirm-dialog.component';
 import { SessionBannerComponent } from './shared/components/session-banner/session-banner.component';
+import { SettingsService } from './core/services/settings.service';
+import { ensureLayoutFonts } from './core/layouts';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +23,8 @@ import { SessionBannerComponent } from './shared/components/session-banner/sessi
   styleUrl: './app.component.css',
 })
 export class AppComponent {
+  private readonly settingsService = inject(SettingsService);
+
   /** El panel de administración tiene su propio layout, así que ocultamos header/footer públicos ahí */
   readonly isAdminRoute = signal(false);
 
@@ -28,5 +32,21 @@ export class AppComponent {
     router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => this.isAdminRoute.set(e.urlAfterRedirects.startsWith('/admin')));
+
+    // Único lugar que escribe `data-layout` en <html>. Lo lee `styles.css` para
+    // cambiar fuentes, radios y paleta de TODA la tienda (header, footer y
+    // páginas incluidas) en los diseños de plantilla (`core/layouts.ts`). En el
+    // admin se saca: el backoffice tiene su propia identidad y no debe heredar
+    // el diseño que elija el cliente.
+    effect(() => {
+      const id = this.settingsService.layout();
+      const root = document.documentElement;
+      if (this.isAdminRoute()) {
+        root.removeAttribute('data-layout');
+        return;
+      }
+      root.setAttribute('data-layout', id);
+      ensureLayoutFonts(id);
+    });
   }
 }
