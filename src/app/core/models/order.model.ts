@@ -18,6 +18,9 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   POSNET: 'Tarjeta (posnet del local)',
 };
 
+/** Estado de una línea: permite entregar o cancelar parte de un pedido. */
+export type OrderLineStatus = 'PENDIENTE' | 'ENTREGADA' | 'CANCELADA';
+
 export interface OrderLine {
   /** id de la línea (lo asigna el backend) */
   id: string;
@@ -28,7 +31,9 @@ export interface OrderLine {
   quantity: number;
   /** Precio unitario al momento del pedido */
   unitPrice: number;
-  /** El dueño/a lo tilda para confirmar que hay stock y lo va a entregar */
+  /** PENDIENTE hasta que se entrega o se cancela (entrega parcial). */
+  status: OrderLineStatus;
+  /** status !== CANCELADA (lo sigue mandando el backend por compatibilidad). */
   accepted: boolean;
 }
 
