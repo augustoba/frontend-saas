@@ -37,22 +37,43 @@ interface NavGroup {
 
 const GROUPS: NavGroup[] = [
   {
+    id: 'pos',
+    label: 'Punto de venta',
+    icon: '🧾',
+    items: [
+      { path: '/admin/pos/vender', label: 'Vender', permission: 'POS_USE', sistemas: ['POS'] },
+      { path: '/admin/pos/caja', label: 'Caja', permission: 'CASH_REGISTER_VIEW', sistemas: ['POS'] },
+      { path: '/admin/pos/ventas', label: 'Ventas', permission: 'POS_USE', sistemas: ['POS'] },
+      { path: '/admin/pos/gastos', label: 'Gastos', permission: 'EXPENSES_MANAGE', sistemas: ['POS'] },
+      { path: '/admin/pos/resultados', label: 'Resultados', permission: 'FINANCE_VIEW', sistemas: ['POS'] },
+    ],
+  },
+  {
+    id: 'articulos',
+    label: 'Artículos',
+    icon: '📦',
+    items: [
+      { path: '/admin/pos/articulos', label: 'Artículos', permission: 'PRODUCTS_VIEW', sistemas: ['POS'] },
+      { path: '/admin/pos/stock', label: 'Movimientos de stock', permission: 'STOCK_MOVEMENTS_VIEW', sistemas: ['POS'] },
+      { path: '/admin/pos/proveedores', label: 'Proveedores', permission: 'SUPPLIERS_MANAGE', sistemas: ['POS'] },
+    ],
+  },
+  {
     id: 'ventas',
     label: 'Ventas',
     icon: '🧾',
     items: [
-      { path: '/admin/pedidos', label: 'Pedidos', badge: 'pending', permission: 'ORDERS_VIEW' },
+      { path: '/admin/pedidos', label: 'Pedidos', badge: 'pending', permission: 'ORDERS_VIEW', sistemas: ['ECOMMERCE'] },
       { path: '/admin/ventas/nueva', label: 'Venta en el local', permission: 'POS_USE', sistemas: ['ECOMMERCE'] },
-      { path: '/admin/kiosco', label: 'Punto de venta (kiosco)', permission: 'POS_USE', sistemas: ['POS'] },
-      { path: '/admin/cambios', label: 'Cambios', permission: 'EXCHANGES_USE' },
-      { path: '/admin/caja', label: 'Caja', permission: 'CASH_REGISTER_VIEW' },
-      { path: '/admin/turnos', label: 'Turnos', permission: 'SHIFTS_MANAGE' },
-      { path: '/admin/promociones', label: 'Descuentos', permission: 'DISCOUNTS_MANAGE' },
+      { path: '/admin/cambios', label: 'Cambios', permission: 'EXCHANGES_USE', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/caja', label: 'Caja', permission: 'CASH_REGISTER_VIEW', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/turnos', label: 'Turnos', permission: 'SHIFTS_MANAGE', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/promociones', label: 'Descuentos', permission: 'DISCOUNTS_MANAGE', sistemas: ['ECOMMERCE'] },
       { path: '/admin/cupones', label: 'Cupones', permission: 'COUPONS_MANAGE', sistemas: ['ECOMMERCE'] },
       { path: '/admin/campanias', label: 'Campañas', permission: 'MARKETING_MANAGE', sistemas: ['ECOMMERCE'] },
-      { path: '/admin/metricas', label: 'Métricas', permission: 'METRICS_VIEW' },
-      { path: '/admin/gastos', label: 'Gastos', permission: 'EXPENSES_MANAGE' },
-      { path: '/admin/balance', label: 'Balance', permission: 'FINANCE_VIEW' },
+      { path: '/admin/metricas', label: 'Métricas', permission: 'METRICS_VIEW', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/gastos', label: 'Gastos', permission: 'EXPENSES_MANAGE', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/balance', label: 'Balance', permission: 'FINANCE_VIEW', sistemas: ['ECOMMERCE'] },
     ],
   },
   {
@@ -60,11 +81,11 @@ const GROUPS: NavGroup[] = [
     label: 'Catálogo',
     icon: '📦',
     items: [
-      { path: '/admin/productos', label: 'Productos', permission: 'PRODUCTS_VIEW' },
-      { path: '/admin/movimientos-stock', label: 'Movimientos de stock', permission: 'STOCK_MOVEMENTS_VIEW' },
-      { path: '/admin/parametrias', label: 'Parametrías', permission: 'PARAMS_MANAGE' },
-      { path: '/admin/talles', label: 'Talles', permission: 'SIZE_SCALES_MANAGE' },
-      { path: '/admin/proveedores', label: 'Proveedores', permission: 'SUPPLIERS_MANAGE' },
+      { path: '/admin/productos', label: 'Productos', permission: 'PRODUCTS_VIEW', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/movimientos-stock', label: 'Movimientos de stock', permission: 'STOCK_MOVEMENTS_VIEW', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/parametrias', label: 'Parametrías', permission: 'PARAMS_MANAGE', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/talles', label: 'Talles', permission: 'SIZE_SCALES_MANAGE', sistemas: ['ECOMMERCE'] },
+      { path: '/admin/proveedores', label: 'Proveedores', permission: 'SUPPLIERS_MANAGE', sistemas: ['ECOMMERCE'] },
     ],
   },
   {
@@ -129,6 +150,8 @@ export class AdminLayoutComponent {
     return GROUPS.map((g) => ({ ...g, items: g.items.filter(visible) })).filter((g) => g.items.length > 0);
   });
   readonly storeName = computed(() => this.settingsService.settings().storeName);
+  /** Sólo el ecommerce tiene sitio público para "Ver tienda". */
+  readonly tieneSitio = computed(() => this.settingsService.settings().sistema === 'ECOMMERCE');
 
   /** Nombre a mostrar arriba de todo el panel. */
   readonly displayName = this.authService.displayName;

@@ -2,10 +2,12 @@ import { Routes } from '@angular/router';
 import { adminGuard, permissionGuard, superAdminGuard } from './core/guards/admin.guard';
 import { productResolver } from './features/admin/admin-product-form/product.resolver';
 import { orderResolver } from './features/admin/admin-order-detail/order.resolver';
+import { sitioPublicoGuard } from './core/guards/sitio-publico.guard';
 
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/catalog/catalog-page/catalog-page.component').then(
         (m) => m.CatalogPageComponent
@@ -14,6 +16,7 @@ export const routes: Routes = [
   },
   {
     path: 'producto/:id',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/product-detail/product-detail-page/product-detail-page.component').then(
         (m) => m.ProductDetailPageComponent
@@ -22,24 +25,28 @@ export const routes: Routes = [
   },
   {
     path: 'carrito',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/cart/cart-page/cart-page.component').then((m) => m.CartPageComponent),
     title: 'Carrito',
   },
   {
     path: 'nosotros',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/about/about-page/about-page.component').then((m) => m.AboutPageComponent),
     title: 'Quiénes somos',
   },
   {
     path: 'promos',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/promos/promos-page/promos-page.component').then((m) => m.PromosPageComponent),
     title: 'Promociones',
   },
   {
     path: 'como-comprar',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/help/como-comprar-page/como-comprar-page.component').then(
         (m) => m.ComoComprarPageComponent
@@ -48,6 +55,7 @@ export const routes: Routes = [
   },
   {
     path: 'mis-pedidos',
+    canActivate: [sitioPublicoGuard],
     loadComponent: () =>
       import('./features/orders/mis-pedidos-page/mis-pedidos-page.component').then(
         (m) => m.MisPedidosPageComponent
@@ -90,6 +98,14 @@ export const routes: Routes = [
     title: 'Recibo',
   },
   {
+    // Ticket del POS: fuera del marco del panel para que se imprima limpio.
+    path: 'admin/pos/recibo/:id',
+    canActivate: [adminGuard, permissionGuard],
+    data: { permission: 'POS_USE' },
+    loadComponent: () => import('./pos/admin/pos-recibo/pos-recibo.component').then((m) => m.PosReciboComponent),
+    title: 'Ticket',
+  },
+  {
     path: 'admin/recibo-cambio/:id',
     canActivate: [adminGuard, permissionGuard],
     data: { permission: 'EXCHANGES_USE' },
@@ -107,6 +123,10 @@ export const routes: Routes = [
       ),
     canActivate: [adminGuard],
     children: [
+      {
+        path: 'pos',
+        loadChildren: () => import('./pos/pos.routes').then((m) => m.POS_ROUTES),
+      },
       {
         path: '',
         loadComponent: () =>

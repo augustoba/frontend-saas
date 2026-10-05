@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ProductService } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { SettingsService } from '../../../core/services/settings.service';
 import { LowStockItem } from '../../../core/models/dashboard.model';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 
@@ -35,7 +36,22 @@ export class AdminDashboardComponent {
     );
   }
 
+  private readonly settings = inject(SettingsService);
+  private readonly router = inject(Router);
+  private cargado = false;
+
   constructor() {
-    this.dashboardService.loadDashboard();
+    this.settings.ensureLoaded();
+    // El inicio del panel es el del ecommerce: un punto de venta arranca en "Vender"
+    // (sus números viven en Caja y Resultados).
+    effect(() => {
+      if (this.settings.status() !== 'loaded') return;
+      if (this.settings.settings().sistema === 'POS') {
+        this.router.navigate(['/admin/pos'], { replaceUrl: true });
+      } else if (!this.cargado) {
+        this.cargado = true;
+        this.dashboardService.loadDashboard();
+      }
+    });
   }
 }

@@ -1,6 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, filter, take } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { SettingsService } from './settings.service';
 import { Product, ProductInput } from '../models/product.model';
 import { CollectionStore } from '../state/collection-store';
 import { apiUrl } from '../config/site-config';
@@ -62,11 +64,20 @@ export class ProductService {
   readonly bestSellers = signal<Product[]>([]);
 
   constructor() {
-    this.publicStore.ensureLoaded();
-    this.http.get<Product[]>(apiUrl('/products/best-sellers?limit=8')).subscribe({
-      next: (list) => this.bestSellers.set(list),
-      error: () => {},
-    });
+    // El catálogo público es del ecommerce: un punto de venta no lo tiene (su
+    // dirección da 503 "sin sitio online"), así que se espera a saber el sistema.
+    const settings = inject(SettingsService);
+    settings.ensureLoaded();
+    toObservable(settings.status)
+      .pipe(filter((s) => s === 'loaded' || s === 'error'), take(1))
+      .subscribe((s) => {
+        if (s === 'loaded' && settings.settings().sistema !== 'ECOMMERCE') return;
+        this.publicStore.ensureLoaded();
+        this.http.get<Product[]>(apiUrl('/products/best-sellers?limit=8')).subscribe({
+          next: (list) => this.bestSellers.set(list),
+          error: () => {},
+        });
+      });
   }
 
   /** Carga la lista completa (panel). Llamar al entrar a una pantalla de admin. */

@@ -1,0 +1,78 @@
+@if (venta(); as v) {
+  <div class="no-print bg-stone-100 border-b border-stone-200 px-4 py-3 flex flex-wrap items-center gap-3">
+    <a routerLink="/admin/pos/ventas" class="text-sm font-semibold text-brand-600 hover:underline">← Ventas</a>
+    <a routerLink="/admin/pos/vender" class="text-sm font-semibold text-brand-600 hover:underline">Seguir vendiendo</a>
+    <div class="ml-auto flex flex-wrap gap-2">
+      @if (v.estado === 'COMPLETADA' && v.factura && !v.factura.cae) {
+        <button type="button" (click)="reintentar(v)" [disabled]="trabajando()"
+          class="bg-amber-500 hover:bg-amber-600 disabled:bg-stone-300 text-white font-bold py-2 px-4 rounded-full text-sm">Reintentar factura</button>
+      }
+      @if (v.estado === 'COMPLETADA' && puedeAnular()) {
+        <button type="button" (click)="anular(v)" [disabled]="trabajando()"
+          class="bg-white ring-1 ring-red-200 text-red-600 hover:bg-red-50 font-bold py-2 px-4 rounded-full text-sm">Anular</button>
+      }
+      <button type="button" (click)="imprimir()" class="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-5 rounded-full text-sm">🖨️ Imprimir</button>
+    </div>
+  </div>
+
+  <div class="receipt max-w-sm mx-auto my-8 bg-white p-7 ring-1 ring-black/10 rounded-lg text-stone-800">
+    <div class="text-center">
+      <img [src]="logoSrc() | cldImg: 200" [alt]="storeName()" class="h-14 w-14 rounded-full object-cover mx-auto" />
+      <p class="font-display font-extrabold text-lg mt-2">{{ storeName() }}</p>
+      @if (storeAddress()) { <p class="text-xs text-stone-500">{{ storeAddress() }}</p> }
+      <p class="mt-3 text-sm font-bold tracking-widest text-stone-500">{{ etiquetaFactura(v.factura) ? 'FACTURA' : 'TICKET' }}</p>
+    </div>
+
+    @if (v.estado === 'ANULADA') {
+      <p class="mt-3 text-center text-sm font-bold text-red-600 border border-red-200 rounded-lg py-1.5">
+        ANULADA {{ v.anuladaEn | date: 'dd/MM HH:mm' }}{{ v.motivoAnulacion ? ' · ' + v.motivoAnulacion : '' }}
+      </p>
+    }
+
+    <div class="mt-4 text-sm flex justify-between border-y border-dashed border-stone-300 py-2">
+      <span>{{ v.codigo }}</span>
+      <span>{{ v.fecha | date: 'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+
+    <table class="w-full text-sm mt-2">
+      <tbody>
+        @for (l of v.lineas; track $index) {
+          <tr class="border-b border-stone-100">
+            <td class="py-1">{{ l.nombre }} <span class="text-xs text-stone-500">x{{ l.cantidad }}</span></td>
+            <td class="py-1 text-right">{{ l.subtotal | currency: 'ARS' : 'symbol' : '1.0-0' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="mt-3 text-sm space-y-1">
+      <div class="flex justify-between font-bold text-base border-t border-stone-300 pt-1.5">
+        <span>TOTAL</span><span>{{ v.total | currency: 'ARS' : 'symbol' : '1.0-0' }}</span>
+      </div>
+      <div class="flex justify-between text-stone-600"><span>Pago</span><span>{{ medioLabels[v.medioPago] }}</span></div>
+      @if (v.montoEntregado != null) {
+        <div class="flex justify-between text-stone-600"><span>Entregó</span><span>{{ v.montoEntregado | currency: 'ARS' : 'symbol' : '1.0-0' }}</span></div>
+        <div class="flex justify-between text-stone-600"><span>Vuelto</span><span>{{ v.vuelto | currency: 'ARS' : 'symbol' : '1.0-0' }}</span></div>
+      }
+      @if (v.referencia) { <div class="flex justify-between text-stone-600"><span>Referencia</span><span>{{ v.referencia }}</span></div> }
+      @if (v.cuitComprador) { <div class="flex justify-between text-stone-600"><span>CUIT</span><span>{{ v.cuitComprador }}</span></div> }
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-dashed border-stone-300 text-center text-xs text-stone-500 space-y-0.5">
+      @if (etiquetaFactura(v.factura); as f) {
+        <p class="font-semibold text-stone-700">{{ f }}</p>
+        <p>CAE {{ v.factura!.cae }} · Vto. {{ v.factura!.caeVencimiento }}</p>
+        @if (v.factura!.qrUrl) { <a [href]="v.factura!.qrUrl" target="_blank" rel="noopener" class="no-print text-brand-600 hover:underline">Ver QR de ARCA</a> }
+      } @else {
+        <p>Comprobante no fiscal (ticket interno)</p>
+        @if (v.factura?.error) { <p class="no-print text-amber-600">ARCA no la facturó: {{ v.factura!.error }}</p> }
+      }
+      <p>Atendió: {{ v.cajeroNombre }}</p>
+      <p class="pt-2">¡Gracias por tu compra!</p>
+    </div>
+  </div>
+} @else if (noEncontrada()) {
+  <p class="text-center text-stone-500 py-16">No se encontró la venta. <a routerLink="/admin/pos/ventas" class="text-brand-600 font-semibold">Volver</a></p>
+} @else {
+  <p class="text-center text-stone-400 py-16">Cargando…</p>
+}

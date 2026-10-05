@@ -1,0 +1,153 @@
+@if (idHistorial) {
+  <a routerLink="/admin/pos/caja" class="text-sm font-semibold text-brand-600 hover:underline">← Caja</a>
+}
+<h1 class="font-display font-extrabold text-2xl text-stone-800 mt-1 mb-5">
+  {{ idHistorial ? 'Caja #' + (resumen()?.caja?.numero ?? '') : 'Caja' }}
+</h1>
+
+@if (resumen() === undefined) {
+  <p class="text-stone-400 text-sm">Cargando…</p>
+} @else if (resumen() === null) {
+  <div class="bg-white rounded-2xl ring-1 ring-black/5 p-6 max-w-md mb-6">
+    <p class="font-semibold text-stone-800 mb-1">No hay una caja abierta</p>
+    <p class="text-sm text-stone-500 mb-4">Abrila con el efectivo que hay para dar cambio. La caja es el turno: se cierra contando el efectivo.</p>
+    @if (puedeOperar()) {
+      <label class="block text-xs font-semibold text-stone-500 mb-1" for="inicial">Efectivo inicial</label>
+      <div class="flex gap-2">
+        <input id="inicial" type="number" min="0" [ngModel]="montoInicial()" (ngModelChange)="montoInicial.set($event)" placeholder="0"
+          class="flex-1 rounded-lg border border-stone-200 px-3 py-2.5 text-sm" />
+        <button type="button" (click)="abrir()" class="bg-mint-500 hover:bg-mint-600 text-white font-bold px-5 rounded-full text-sm">Abrir caja</button>
+      </div>
+    }
+  </div>
+} @else {
+  @let r = resumen()!;
+  <p class="text-sm text-stone-500 mb-4">
+    Abierta {{ r.caja.abiertaEn | date: 'dd/MM HH:mm' }} por {{ r.caja.abiertaPorNombre }}
+    @if (r.caja.cerradaEn) { · cerrada {{ r.caja.cerradaEn | date: 'dd/MM HH:mm' }} por {{ r.caja.cerradaPorNombre }} }
+  </p>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-4">
+      <p class="text-xs text-stone-500">Vendido</p>
+      <p class="font-display font-extrabold text-2xl text-stone-800">{{ r.totalVendido | currency: 'ARS' : 'symbol' : '1.0-0' }}</p>
+      <p class="text-xs text-stone-400">{{ r.cantidadVentas }} venta(s){{ r.ventasAnuladas ? ' · ' + r.ventasAnuladas + ' anulada(s)' : '' }}</p>
+    </div>
+    @for (m of medios; track m) {
+      @if (m !== 'QR' || r.porMedioPago[m] > 0) {
+        <div class="bg-white rounded-2xl ring-1 ring-black/5 p-4">
+          <p class="text-xs text-stone-500">{{ medioLabels[m] }}</p>
+          <p class="font-display font-bold text-xl text-stone-800">{{ r.porMedioPago[m] | currency: 'ARS' : 'symbol' : '1.0-0' }}</p>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-5 items-start">
+    <!-- Efectivo -->
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5">
+      <p class="font-display font-bold text-stone-800 mb-3">Efectivo en la caja</p>
+      <dl class="text-sm space-y-1.5">
+        <div class="flex justify-between"><dt class="text-stone-500">Inicial</dt><dd>{{ r.caja.montoInicial | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+        <div class="flex justify-between"><dt class="text-stone-500">+ Ventas en efectivo</dt><dd>{{ r.porMedioPago.EFECTIVO | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+        <div class="flex justify-between"><dt class="text-stone-500">+ Ingresos</dt><dd>{{ r.ingresos | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+        <div class="flex justify-between"><dt class="text-stone-500">− Egresos</dt><dd>{{ r.egresos | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+        <div class="flex justify-between border-t border-stone-100 pt-2 font-bold"><dt>Esperado</dt><dd>{{ r.efectivoEsperado | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+        @if (r.caja.estado === 'CERRADA') {
+          <div class="flex justify-between"><dt class="text-stone-500">Contado</dt><dd>{{ r.caja.efectivoContado | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd></div>
+          <div class="flex justify-between font-bold" [class.text-red-600]="(r.caja.diferencia ?? 0) < 0" [class.text-mint-700]="(r.caja.diferencia ?? 0) >= 0">
+            <dt>Diferencia</dt><dd>{{ r.caja.diferencia | currency: 'ARS' : 'symbol' : '1.0-0' }}</dd>
+          </div>
+          @if (r.caja.notaCierre) { <p class="text-xs text-stone-500 pt-1">Nota: {{ r.caja.notaCierre }}</p> }
+        }
+      </dl>
+
+      @if (r.caja.estado === 'ABIERTA' && puedeOperar()) {
+        <div class="mt-5 pt-4 border-t border-stone-100">
+          <p class="text-sm font-semibold text-stone-700 mb-2">Cerrar caja (arqueo)</p>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="contado">Efectivo contado</label>
+          <input id="contado" type="number" min="0" [ngModel]="contado()" (ngModelChange)="contado.set($event)"
+            class="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm mb-2" />
+          @if (diferenciaPrevia() !== null) {
+            <p class="text-sm font-semibold mb-2" [class.text-mint-700]="diferenciaPrevia() === 0"
+              [class.text-red-600]="diferenciaPrevia()! < 0" [class.text-amber-600]="diferenciaPrevia()! > 0">
+              {{ diferenciaPrevia() === 0 ? 'Coincide con lo esperado' : (diferenciaPrevia()! < 0 ? 'Falta ' : 'Sobra ') + (diferenciaPrevia()! < 0 ? -diferenciaPrevia()! : diferenciaPrevia()!).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }) }}
+            </p>
+          }
+          <input type="text" [ngModel]="notaCierre()" (ngModelChange)="notaCierre.set($event)" placeholder="Nota (opcional)" aria-label="Nota del cierre"
+            class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm mb-3" />
+          <button type="button" (click)="cerrar()" [disabled]="contado() === null"
+            class="w-full bg-stone-800 hover:bg-stone-900 disabled:bg-stone-300 text-white font-bold py-2.5 rounded-full text-sm">Cerrar caja</button>
+        </div>
+      }
+    </div>
+
+    <!-- Movimientos -->
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5">
+      <p class="font-display font-bold text-stone-800 mb-3">Ingresos y egresos</p>
+      @if (r.caja.estado === 'ABIERTA' && puedeOperar()) {
+        <div class="flex flex-wrap gap-2 mb-4">
+          <select [ngModel]="movTipo()" (ngModelChange)="movTipo.set($event)" aria-label="Tipo de movimiento"
+            class="rounded-lg border border-stone-200 px-2 py-2 text-sm">
+            <option value="EGRESO">Egreso (sale)</option>
+            <option value="INGRESO">Ingreso (entra)</option>
+          </select>
+          <input type="number" min="0" [ngModel]="movMonto()" (ngModelChange)="movMonto.set($event)" placeholder="$" aria-label="Monto"
+            class="w-28 rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+          <input type="text" [ngModel]="movMotivo()" (ngModelChange)="movMotivo.set($event)" (keyup.enter)="registrarMovimiento()"
+            placeholder="Motivo (retiro, cambio, pago…)" aria-label="Motivo" class="flex-1 min-w-40 rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+          <button type="button" (click)="registrarMovimiento()" class="bg-stone-800 hover:bg-stone-900 text-white text-sm font-semibold px-4 rounded-lg">Registrar</button>
+        </div>
+      }
+      @for (m of r.movimientos; track m.id) {
+        <div class="flex justify-between gap-3 text-sm py-1.5 border-b border-stone-50">
+          <span class="text-stone-600">{{ m.fecha | date: 'HH:mm' }} · {{ m.motivo }} <span class="text-stone-400">({{ m.autorNombre }})</span></span>
+          <span class="font-semibold whitespace-nowrap" [class.text-red-600]="m.tipo === 'EGRESO'" [class.text-mint-700]="m.tipo === 'INGRESO'">
+            {{ m.tipo === 'EGRESO' ? '−' : '+' }}{{ m.monto | currency: 'ARS' : 'symbol' : '1.0-0' }}
+          </span>
+        </div>
+      } @empty {
+        <p class="text-sm text-stone-400">Sin movimientos.</p>
+      }
+    </div>
+  </div>
+
+  @if (idHistorial && ventas().length) {
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5 mt-5">
+      <p class="font-display font-bold text-stone-800 mb-3">Ventas de esta caja</p>
+      @for (v of ventas(); track v.id) {
+        <a [routerLink]="['/admin/pos/recibo', v.id]" class="flex justify-between text-sm py-1.5 border-b border-stone-50 hover:bg-stone-50">
+          <span>{{ v.codigo }} · {{ v.fecha | date: 'HH:mm' }} · {{ medioLabels[v.medioPago] }}
+            @if (v.estado === 'ANULADA') { <span class="text-red-500 font-semibold">anulada</span> }</span>
+          <span class="font-semibold" [class.line-through]="v.estado === 'ANULADA'">{{ v.total | currency: 'ARS' : 'symbol' : '1.0-0' }}</span>
+        </a>
+      }
+    </div>
+  }
+}
+
+@if (!idHistorial && historial().length) {
+  <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5 mt-6 overflow-x-auto">
+    <p class="font-display font-bold text-stone-800 mb-3">Cajas anteriores</p>
+    <table class="w-full text-sm min-w-[560px]">
+      <thead>
+        <tr class="text-left text-stone-500 border-b border-stone-100">
+          <th class="py-2 font-semibold">Caja</th><th class="py-2 font-semibold">Abierta</th><th class="py-2 font-semibold">Cerrada</th>
+          <th class="py-2 font-semibold text-right">Esperado</th><th class="py-2 font-semibold text-right">Contado</th><th class="py-2 font-semibold text-right">Diferencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of historial(); track c.id) {
+          <tr class="border-b border-stone-50">
+            <td class="py-2"><a [routerLink]="['/admin/pos/cajas', c.id]" class="font-semibold text-brand-600 hover:underline">#{{ c.numero }}</a></td>
+            <td class="py-2">{{ c.abiertaEn | date: 'dd/MM HH:mm' }} · {{ c.abiertaPorNombre }}</td>
+            <td class="py-2">{{ c.cerradaEn ? (c.cerradaEn | date: 'dd/MM HH:mm') : 'Abierta' }}</td>
+            <td class="py-2 text-right">{{ c.efectivoEsperado | currency: 'ARS' : 'symbol' : '1.0-0' }}</td>
+            <td class="py-2 text-right">{{ c.efectivoContado | currency: 'ARS' : 'symbol' : '1.0-0' }}</td>
+            <td class="py-2 text-right font-semibold" [class.text-red-600]="(c.diferencia ?? 0) < 0">{{ c.diferencia | currency: 'ARS' : 'symbol' : '1.0-0' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

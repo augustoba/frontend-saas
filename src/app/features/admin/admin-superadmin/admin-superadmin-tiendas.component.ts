@@ -102,7 +102,7 @@ export class AdminSuperadminTiendasComponent {
    */
   ver(tenant: TenantRecord): void {
     this.demoTenant.view(tenant.slug);
-    const destino = tenant.ecommerceSiteEnabled ? '/' : '/admin/kiosco';
+    const destino = tenant.ecommerceSiteEnabled ? '/' : '/admin';
     this.router.navigateByUrl(destino).then(() => window.location.reload());
   }
 

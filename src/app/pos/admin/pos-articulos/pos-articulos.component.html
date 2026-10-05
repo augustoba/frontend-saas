@@ -1,0 +1,162 @@
+<div class="flex items-center justify-between gap-3 mb-5 flex-wrap">
+  <h1 class="font-display font-extrabold text-2xl text-stone-800">Artículos</h1>
+  <div class="flex items-center gap-3">
+    <a routerLink="/admin/pos/stock" class="text-sm font-semibold text-stone-500 hover:text-brand-600">Movimientos de stock</a>
+    @if (puedeEditar() && !verArchivados()) {
+      <button type="button" (click)="nuevo()" class="bg-brand-500 hover:bg-brand-600 text-white font-bold py-2 px-5 rounded-full text-sm">+ Nuevo artículo</button>
+    }
+  </div>
+</div>
+
+<!-- Categorías -->
+<div class="flex flex-wrap items-center gap-2 mb-4">
+  <button type="button" (click)="categoriaSel.set('')" class="text-xs font-semibold px-3 py-1.5 rounded-full ring-1"
+    [class.bg-stone-800]="!categoriaSel()" [class.text-white]="!categoriaSel()" [class.ring-stone-200]="categoriaSel()">Todas</button>
+  @for (c of categorias(); track c.id) {
+    <span class="inline-flex items-center rounded-full ring-1 text-xs font-semibold"
+      [class.bg-stone-800]="categoriaSel() === c.id" [class.text-white]="categoriaSel() === c.id" [class.ring-stone-200]="categoriaSel() !== c.id">
+      <button type="button" (click)="categoriaSel.set(c.id)" class="pl-3 pr-1 py-1.5">{{ c.nombre }}</button>
+      @if (puedeEditar()) {
+        <button type="button" (click)="renombrarCategoria(c)" [attr.aria-label]="'Renombrar ' + c.nombre" class="px-1 opacity-60 hover:opacity-100">✎</button>
+        <button type="button" (click)="borrarCategoria(c)" [attr.aria-label]="'Borrar ' + c.nombre" class="pr-2.5 pl-1 opacity-60 hover:opacity-100">✕</button>
+      }
+    </span>
+  }
+  @if (puedeEditar()) {
+    <input type="text" [ngModel]="nuevaCategoria()" (ngModelChange)="nuevaCategoria.set($event)" (keyup.enter)="agregarCategoria()"
+      placeholder="+ Categoría" aria-label="Nueva categoría" class="w-32 rounded-full border border-dashed border-stone-300 px-3 py-1 text-xs" />
+  }
+</div>
+
+<div class="bg-white rounded-2xl ring-1 ring-black/5 p-4 mb-3 flex flex-wrap items-center gap-3">
+  <input type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" placeholder="Buscar por nombre o código"
+    aria-label="Buscar" class="flex-1 min-w-48 rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+  <label class="flex items-center gap-2 text-sm text-stone-600">
+    <input type="checkbox" class="w-4 h-4 accent-brand-500" [ngModel]="soloStockBajo()" (ngModelChange)="soloStockBajo.set($event)" />
+    Stock bajo o sin stock
+  </label>
+  <button type="button" (click)="alternarArchivados()" class="text-sm font-semibold text-stone-500 hover:text-brand-600">
+    {{ verArchivados() ? '← Ver activos' : 'Ver archivados' }}
+  </button>
+</div>
+
+<div class="grid gap-5 items-start" [ngClass]="{ 'lg:grid-cols-[1fr_360px]': borrador() || stockDe() }">
+  @if (articulos() === null) {
+    <p class="text-stone-400 text-sm">Cargando…</p>
+  } @else {
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 overflow-x-auto">
+      <table class="w-full text-sm min-w-[640px]">
+        <thead>
+          <tr class="text-left text-stone-500 border-b border-stone-100">
+            <th class="p-3 font-semibold">Artículo</th>
+            <th class="p-3 font-semibold">Código</th>
+            <th class="p-3 font-semibold text-right">Precio</th>
+            <th class="p-3 font-semibold text-right">Costo</th>
+            <th class="p-3 font-semibold text-right">Stock</th>
+            <th class="p-3 font-semibold text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of visibles(); track a.id) {
+            <tr class="border-b border-stone-50 last:border-0 hover:bg-stone-50/60">
+              <td class="p-3"><span class="font-semibold text-stone-800">{{ a.nombre }}</span>
+                @if (nombreCategoria(a.categoriaId); as cat) { <span class="block text-xs text-stone-400">{{ cat }}</span> }</td>
+              <td class="p-3 font-mono text-xs text-stone-500">{{ a.codigoBarras ?? '—' }}</td>
+              <td class="p-3 text-right font-semibold">{{ a.precio | currency: 'ARS' : 'symbol' : '1.0-0' }}</td>
+              <td class="p-3 text-right text-stone-500">{{ a.costo != null ? (a.costo | currency: 'ARS' : 'symbol' : '1.0-0') : '—' }}</td>
+              <td class="p-3 text-right font-semibold" [class.text-red-600]="a.stock <= 0" [class.text-amber-600]="a.stock > 0 && a.stockBajo">{{ a.stock }}</td>
+              <td class="p-3 text-right whitespace-nowrap">
+                @if (puedeEditar()) {
+                  @if (!a.archivado) {
+                    <button type="button" (click)="abrirStock(a, 'INGRESO')" class="text-mint-700 font-semibold hover:underline mr-3">+ Ingreso</button>
+                    <button type="button" (click)="abrirStock(a, 'AJUSTE')" class="text-stone-500 font-semibold hover:underline mr-3">Ajustar</button>
+                    <button type="button" (click)="editar(a)" class="text-brand-600 font-semibold hover:underline mr-3">Editar</button>
+                  }
+                  <button type="button" (click)="archivar(a)" class="text-stone-400 hover:text-red-500 font-semibold">{{ a.archivado ? 'Restaurar' : 'Archivar' }}</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="p-8 text-center text-stone-400">No hay artículos{{ verArchivados() ? ' archivados' : '' }}.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (borrador(); as b) {
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5 lg:sticky lg:top-4">
+      <p class="font-display font-bold text-stone-800 mb-4">{{ b.id ? 'Editar artículo' : 'Nuevo artículo' }}</p>
+      <label class="block text-xs font-semibold text-stone-500 mb-1" for="anom">Nombre</label>
+      <input id="anom" type="text" [ngModel]="b.nombre" (ngModelChange)="campo('nombre', $event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm mb-3" />
+      <label class="block text-xs font-semibold text-stone-500 mb-1" for="acod">Código de barras (escanealo acá)</label>
+      <input id="acod" type="text" [ngModel]="b.codigoBarras" (ngModelChange)="campo('codigoBarras', $event)" (keydown.enter)="$event.preventDefault()"
+        class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm font-mono mb-3" />
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="apre">Precio</label>
+          <input id="apre" type="number" min="0" [ngModel]="b.precio" (ngModelChange)="campo('precio', $event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="acos">Costo</label>
+          <input id="acos" type="number" min="0" [ngModel]="b.costo" (ngModelChange)="campo('costo', $event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="aiva">IVA %</label>
+          <select id="aiva" [ngModel]="b.iva" (ngModelChange)="campo('iva', $event)" class="w-full rounded-lg border border-stone-200 px-2 py-2 text-sm">
+            <option [ngValue]="null">21 (general)</option>
+            <option [ngValue]="10.5">10,5</option>
+            <option [ngValue]="27">27</option>
+            <option [ngValue]="0">Exento (0)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="aumb">Avisar con stock ≤</label>
+          <input id="aumb" type="number" min="0" [ngModel]="b.umbralStock" (ngModelChange)="campo('umbralStock', $event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+        </div>
+        @if (!b.id) {
+          <div>
+            <label class="block text-xs font-semibold text-stone-500 mb-1" for="aini">Stock inicial</label>
+            <input id="aini" type="number" min="0" [ngModel]="b.stockInicial" (ngModelChange)="campo('stockInicial', $event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+          </div>
+        }
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 mb-1" for="acat">Categoría</label>
+          <select id="acat" [ngModel]="b.categoriaId" (ngModelChange)="campo('categoriaId', $event)" class="w-full rounded-lg border border-stone-200 px-2 py-2 text-sm">
+            <option value="">Sin categoría</option>
+            @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+          </select>
+        </div>
+      </div>
+      @if (margen() !== null) {
+        <p class="text-xs mt-3 font-semibold" [class.text-mint-700]="margen()! >= 0" [class.text-red-500]="margen()! < 0">Margen sobre el costo: {{ margen() }}%</p>
+      }
+      <div class="flex gap-2 mt-5">
+        <button type="button" (click)="guardar()" [disabled]="guardando() || !b.nombre.trim() || b.precio == null"
+          class="flex-1 bg-brand-500 hover:bg-brand-600 disabled:bg-stone-300 text-white font-bold py-2.5 rounded-full text-sm">{{ guardando() ? 'Guardando…' : 'Guardar' }}</button>
+        <button type="button" (click)="borrador.set(null)" class="px-4 text-sm font-semibold text-stone-500">Cancelar</button>
+      </div>
+    </div>
+  }
+
+  @if (stockDe(); as a) {
+    <div class="bg-white rounded-2xl ring-1 ring-black/5 p-5 lg:sticky lg:top-4">
+      <p class="font-display font-bold text-stone-800">{{ stockMotivo() === 'INGRESO' ? 'Ingreso de mercadería' : 'Ajuste por conteo' }}</p>
+      <p class="text-sm text-stone-500 mb-4">{{ a.nombre }} · stock actual {{ a.stock }}</p>
+      <label class="block text-xs font-semibold text-stone-500 mb-1" for="scan">{{ stockMotivo() === 'INGRESO' ? 'Unidades que entran' : 'Unidades contadas' }}</label>
+      <input id="scan" type="number" [min]="stockMotivo() === 'INGRESO' ? 1 : 0" [ngModel]="stockCantidad()" (ngModelChange)="stockCantidad.set($event)"
+        class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm mb-3" />
+      @if (stockMotivo() === 'INGRESO') {
+        <label class="block text-xs font-semibold text-stone-500 mb-1" for="scos">Costo unitario (actualiza el costo)</label>
+        <input id="scos" type="number" min="0" [ngModel]="stockCosto()" (ngModelChange)="stockCosto.set($event)" class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm mb-3" />
+      }
+      <input type="text" [ngModel]="stockNota()" (ngModelChange)="stockNota.set($event)" placeholder="Nota (proveedor, remito…)" aria-label="Nota"
+        class="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+      <div class="flex gap-2 mt-5">
+        <button type="button" (click)="guardarStock()" [disabled]="stockCantidad() === null"
+          class="flex-1 bg-mint-500 hover:bg-mint-600 disabled:bg-stone-300 text-white font-bold py-2.5 rounded-full text-sm">Guardar</button>
+        <button type="button" (click)="stockDe.set(null)" class="px-4 text-sm font-semibold text-stone-500">Cancelar</button>
+      </div>
+    </div>
+  }
+</div>

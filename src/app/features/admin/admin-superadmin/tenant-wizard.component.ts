@@ -11,7 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TenantAdminService, TenantRecord } from '../../../core/services/tenant-admin.service';
 import { PlanAdminService } from '../../../core/services/plan-admin.service';
@@ -50,7 +50,7 @@ export interface TenantDraft {
 @Component({
   selector: 'app-tenant-wizard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, NgStyle, CatalogPageComponent, HeaderComponent, FooterComponent],
+  imports: [FormsModule, NgClass, NgStyle, CatalogPageComponent, HeaderComponent, FooterComponent],
   templateUrl: './tenant-wizard.component.html',
 })
 export class TenantWizardComponent {
@@ -84,6 +84,8 @@ export class TenantWizardComponent {
   readonly sistemas = SISTEMAS;
   readonly sistemaLabels = SISTEMA_LABELS;
   readonly draftSistema = signal<Sistema>('ECOMMERCE');
+  /** Sólo el ecommerce tiene tienda online: los demás saltean diseño, color y vista previa. */
+  readonly conSitio = computed(() => this.draftSistema() === 'ECOMMERCE');
   readonly plansDelSistema = computed(() => this.plans().filter((p) => p.sistema === this.draftSistema()));
 
   // Administrador inicial (opcional): con qué usuario entra el dueño a su panel.
@@ -265,7 +267,12 @@ export class TenantWizardComponent {
 
   back(): void {
     this.error.set(null);
-    this.step.update((s) => (s > 1 ? ((s - 1) as WizardStep) : s));
+    this.step.update((s) => {
+      if (s <= 1) return s;
+      let prev = s - 1;
+      if (!this.conSitio() && (prev === 5 || prev === 3)) prev--;
+      return prev as WizardStep;
+    });
   }
 
   goToLogo(): void {
@@ -273,7 +280,7 @@ export class TenantWizardComponent {
   }
 
   goToColor(): void {
-    this.step.set(3);
+    this.step.set(this.conSitio() ? 3 : 4);
   }
 
   goToIdentity(): void {
@@ -286,7 +293,7 @@ export class TenantWizardComponent {
       this.error.set('El WhatsApp tiene que ser solo números (país + área + número, sin +, espacios ni el 15).');
       return;
     }
-    this.step.set(5);
+    this.step.set(this.conSitio() ? 5 : 6);
   }
 
   async enterFullscreen(): Promise<void> {

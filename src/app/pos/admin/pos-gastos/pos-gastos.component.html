@@ -1,0 +1,49 @@
+<h1 class="font-display font-extrabold text-2xl text-stone-800 mb-5">Gastos</h1>
+
+<div class="bg-white rounded-2xl ring-1 ring-black/5 p-4 mb-4">
+  <p class="text-sm font-semibold text-stone-700 mb-3">Cargar un gasto</p>
+  <div class="flex flex-wrap gap-2 items-center">
+    <input type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" aria-label="Fecha" class="rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+    <input type="text" [ngModel]="concepto()" (ngModelChange)="concepto.set($event)" placeholder="Concepto (luz, flete, mercadería…)" aria-label="Concepto"
+      class="flex-1 min-w-48 rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+    <select [ngModel]="categoria()" (ngModelChange)="categoria.set($event)" aria-label="Categoría" class="rounded-lg border border-stone-200 px-2 py-2 text-sm">
+      @for (c of categorias; track c) { <option [value]="c">{{ c }}</option> }
+    </select>
+    <select [ngModel]="proveedorId()" (ngModelChange)="proveedorId.set($event)" aria-label="Proveedor" class="rounded-lg border border-stone-200 px-2 py-2 text-sm">
+      <option value="">Sin proveedor</option>
+      @for (p of proveedores(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+    </select>
+    <input type="number" min="0" [ngModel]="monto()" (ngModelChange)="monto.set($event)" placeholder="$" aria-label="Monto"
+      class="w-28 rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+    <label class="flex items-center gap-2 text-sm text-stone-600">
+      <input type="checkbox" class="w-4 h-4 accent-brand-500" [ngModel]="deCaja()" (ngModelChange)="deCaja.set($event)" />
+      Pagado con efectivo de la caja
+    </label>
+    <button type="button" (click)="guardar()" [disabled]="!concepto().trim() || !monto()"
+      class="bg-brand-500 hover:bg-brand-600 disabled:bg-stone-300 text-white font-bold px-5 py-2 rounded-full text-sm">Cargar</button>
+  </div>
+</div>
+
+<div class="flex flex-wrap items-center gap-2 mb-3">
+  <input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" aria-label="Desde" class="rounded-lg border border-stone-200 px-3 py-1.5 text-sm" />
+  <span class="text-stone-400 text-sm">a</span>
+  <input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" aria-label="Hasta" class="rounded-lg border border-stone-200 px-3 py-1.5 text-sm" />
+  <button type="button" (click)="cargar()" class="text-sm font-semibold text-brand-600 hover:underline">Ver</button>
+  <span class="ml-auto text-sm text-stone-500">Total: <span class="font-bold text-stone-800">{{ total() | currency: 'ARS' : 'symbol' : '1.0-0' }}</span></span>
+</div>
+
+<div class="bg-white rounded-2xl ring-1 ring-black/5">
+  @for (g of gastos(); track g.id) {
+    <div class="flex items-center gap-3 p-4 border-b border-stone-50 last:border-0">
+      <span class="text-sm text-stone-500 w-14">{{ g.fecha | date: 'dd/MM' }}</span>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-stone-800">{{ g.concepto }}</p>
+        <p class="text-xs text-stone-500">{{ g.categoria ?? 'Sin categoría' }}{{ nombreProveedor(g.proveedorId) ? ' · ' + nombreProveedor(g.proveedorId) : '' }}{{ g.pagadoDeCaja ? ' · de la caja' : '' }}</p>
+      </div>
+      <span class="font-semibold">{{ g.monto | currency: 'ARS' : 'symbol' : '1.0-0' }}</span>
+      <button type="button" (click)="borrar(g)" [attr.aria-label]="'Borrar ' + g.concepto" class="text-stone-300 hover:text-red-500">✕</button>
+    </div>
+  } @empty {
+    <p class="p-8 text-center text-stone-400 text-sm">{{ gastos() === null ? 'Cargando…' : 'No hay gastos en el período.' }}</p>
+  }
+</div>
