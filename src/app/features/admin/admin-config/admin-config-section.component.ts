@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SettingsService, SiteSettings } from '../../../core/services/settings.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { CloudinaryService } from '../../../core/services/cloudinary.service';
+import { ImagenService } from '../../../core/services/imagen.service';
 import { resizeImageFile, validateImageFile } from '../../../core/utils/image-resize';
 import { SitePreviewComponent, PreviewFocus } from '../../../shared/components/site-preview/site-preview.component';
 import { CldImagePipe } from '../../../shared/pipes/cld-image.pipe';
@@ -16,9 +16,9 @@ type ImageField = 'logoUrl' | 'paymentQrTransferImage' | 'paymentQrCardImage';
 
 /** Carpeta y nombre en Cloudinary para cada campo de imagen. */
 const IMAGE_UPLOAD: Record<ImageField, { folder: string; publicId: string }> = {
-  logoUrl: { folder: 'estilos-pequenos/logo', publicId: 'logo' },
-  paymentQrTransferImage: { folder: 'estilos-pequenos/pagos', publicId: 'qr-transferencia' },
-  paymentQrCardImage: { folder: 'estilos-pequenos/pagos', publicId: 'qr-tarjeta' },
+  logoUrl: { folder: 'logo', publicId: 'logo' },
+  paymentQrTransferImage: { folder: 'pagos', publicId: 'qr-transferencia' },
+  paymentQrCardImage: { folder: 'pagos', publicId: 'qr-tarjeta' },
 };
 
 const META: Record<Section, { title: string; blurb: string; focus: PreviewFocus[] }> = {
@@ -72,7 +72,7 @@ export class AdminConfigSectionComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly settingsService = inject(SettingsService);
   private readonly toast = inject(ToastService);
-  private readonly cloudinary = inject(CloudinaryService);
+  private readonly cloudinary = inject(ImagenService);
 
   readonly canUpload = this.cloudinary.configured;
 

@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HeroSlidesService } from '../../../core/services/hero-slides.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
-import { CloudinaryService } from '../../../core/services/cloudinary.service';
+import { ImagenService } from '../../../core/services/imagen.service';
 import { resizeImageFile, validateImageFile } from '../../../core/utils/image-resize';
 import { CldImagePipe } from '../../../shared/pipes/cld-image.pipe';
 
@@ -18,7 +18,7 @@ const CARRUSEL_ASPECT = 21 / 9;
 export class AdminHeroSlidesComponent {
   private readonly heroSlidesService = inject(HeroSlidesService);
   private readonly confirm = inject(ConfirmService);
-  private readonly cloudinary = inject(CloudinaryService);
+  private readonly cloudinary = inject(ImagenService);
 
   readonly canUpload = this.cloudinary.configured;
 
@@ -60,7 +60,7 @@ export class AdminHeroSlidesComponent {
       const resized = await resizeImageFile(file, 1920, 0.82, 'image/jpeg', CARRUSEL_ASPECT);
       const position = this.slides().length + 1;
       const { secureUrl } = await this.cloudinary.upload(resized, {
-        folder: 'estilos-pequenos/carrusel',
+        folder: 'carrusel',
         publicId: `carrusel-${position}`,
       });
       this.heroSlidesService.add(secureUrl, this.newAlt());

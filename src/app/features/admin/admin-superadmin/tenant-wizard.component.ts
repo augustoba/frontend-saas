@@ -16,7 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { TenantAdminService, TenantRecord } from '../../../core/services/tenant-admin.service';
 import { PlanAdminService } from '../../../core/services/plan-admin.service';
 import { DemoTenantService } from '../../../core/services/demo-tenant.service';
-import { CloudinaryService } from '../../../core/services/cloudinary.service';
+import { ImagenService } from '../../../core/services/imagen.service';
 import { resizeImageFile, validateImageFile } from '../../../core/utils/image-resize';
 import { generateBrandRamp } from '../../../core/utils/color-ramp';
 import { extractLogoColor } from '../../../core/utils/logo-color';
@@ -57,7 +57,7 @@ export class TenantWizardComponent {
   private readonly tenantAdmin = inject(TenantAdminService);
   private readonly planAdmin = inject(PlanAdminService);
   private readonly demoTenant = inject(DemoTenantService);
-  private readonly cloudinary = inject(CloudinaryService);
+  private readonly cloudinary = inject(ImagenService);
 
   readonly draft = input.required<TenantDraft>();
   readonly cancelled = output<void>();
@@ -361,8 +361,10 @@ export class TenantWizardComponent {
       }
       try {
         const { secureUrl } = await this.cloudinary.upload(dataUrl, {
-          folder: `${this.draft().slug}/logo`,
+          folder: 'logo',
           publicId: 'logo',
+          // La tienda todavía no existe: el superadmin sube a su carpeta de antemano.
+          slugTienda: this.draft().slug,
         });
         logoUrl = secureUrl;
       } catch (e) {

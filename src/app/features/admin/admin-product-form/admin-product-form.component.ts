@@ -9,7 +9,7 @@ import { SizeScaleService } from '../../../core/services/size-scale.service';
 import { Product, ProductSize, margin } from '../../../core/models/product.model';
 import { ProductParams } from '../../../core/models/param.model';
 import { resizeImageFile, validateImageFile } from '../../../core/utils/image-resize';
-import { CloudinaryService } from '../../../core/services/cloudinary.service';
+import { ImagenService } from '../../../core/services/imagen.service';
 import { slugify } from '../../../core/utils/slugify';
 import { youtubeId } from '../../../core/utils/youtube';
 import { CldImagePipe } from '../../../shared/pipes/cld-image.pipe';
@@ -36,7 +36,7 @@ export class AdminProductFormComponent {
   private readonly paramService = inject(ParamService);
   private readonly supplierService = inject(SupplierService);
   private readonly sizeScaleService = inject(SizeScaleService);
-  private readonly cloudinary = inject(CloudinaryService);
+  private readonly cloudinary = inject(ImagenService);
 
   /** true si se puede subir fotos del disco (Cloudinary configurado en site-config.ts). */
   readonly canUploadFiles = this.cloudinary.configured;
@@ -239,7 +239,7 @@ export class AdminProductFormComponent {
         const resized = await resizeImageFile(file);
         const position = this.images().length + 1;
         const { secureUrl } = await this.cloudinary.upload(resized, {
-          folder: 'estilos-pequenos/productos',
+          folder: 'productos',
           publicId: `${slug}-${position}`,
         });
         this.images.update((list) => [...list, secureUrl]);
