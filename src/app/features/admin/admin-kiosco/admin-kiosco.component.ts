@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { coincideBusqueda, varianteEscaneada } from '../../../core/utils/barcode-match';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -75,7 +76,7 @@ export class AdminKioscoComponent {
     const term = this.search().trim().toLowerCase();
     if (!term) return [];
     return this.products()
-      .filter((p) => p.name.toLowerCase().includes(term) || p.barcode?.toLowerCase().includes(term))
+      .filter((p) => coincideBusqueda(p, term))
       .sort((a, b) => a.name.localeCompare(b.name))
       .slice(0, 8);
   });
@@ -84,9 +85,9 @@ export class AdminKioscoComponent {
   onSearchEnter(): void {
     const term = this.search().trim();
     if (!term) return;
-    const match = this.products().find((p) => p.barcode && p.barcode === term);
-    if (match && match.sizeStocks.length === 1) {
-      this.addProduct(match, match.sizeStocks[0].size);
+    const match = varianteEscaneada(this.products(), term);
+    if (match) {
+      this.addProduct(match.product, match.size);
       return;
     }
     // Sin match exacto de barcode: si sólo hay un resultado filtrado con un talle, sumarlo igual.

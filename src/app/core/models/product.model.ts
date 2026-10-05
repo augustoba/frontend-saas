@@ -8,9 +8,16 @@ import { ProductParams } from './param.model';
 export type ProductSize = string;
 
 /** Stock disponible para un talle puntual de un producto */
+/**
+ * Una variante vendible del producto (talle, medida, color…). `id` lo asigna el
+ * backend; `barcode` es opcional y único en la tienda (el lector del punto de
+ * venta lo reconoce y suma directo esa variante).
+ */
 export interface SizeStock {
+  id?: string;
   size: string;
   stock: number;
+  barcode?: string | null;
 }
 
 export interface Product {

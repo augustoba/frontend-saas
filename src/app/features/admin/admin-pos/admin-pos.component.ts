@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
+import { coincideBusqueda, varianteEscaneada } from '../../../core/utils/barcode-match';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -81,7 +82,7 @@ export class AdminPosComponent {
     const term = this.search().trim().toLowerCase();
     const list = term
       ? this.products().filter(
-          (p) => p.name.toLowerCase().includes(term) || p.barcode?.toLowerCase().includes(term)
+          (p) => coincideBusqueda(p, term)
         )
       : this.products();
     return [...list].sort((a, b) => a.name.localeCompare(b.name));
@@ -89,18 +90,16 @@ export class AdminPosComponent {
 
   /**
    * Un lector de código de barras USB escribe rápido y termina con Enter —
-   * si lo que se tipeó matchea EXACTO el barcode de un producto con un solo
-   * talle, lo suma directo al carrito (flujo "beep, beep, beep" sin clickear
-   * nada). Si el producto tiene varios talles, no hay forma de adivinar cuál
-   * — queda filtrado en la grilla para elegirlo a mano, como con el buscador
-   * por nombre.
+   * si lo que se tipeó es el código de una variante (o el de un producto con
+   * una sola), la suma directo al carrito (flujo "beep, beep, beep" sin
+   * clickear nada; ver `varianteEscaneada`). Si no alcanza para saber qué
+   * variante es, queda filtrado en la grilla para elegirla a mano.
    */
   onSearchEnter(): void {
     const term = this.search().trim();
     if (!term) return;
-    const match = this.products().find((p) => p.barcode && p.barcode === term);
-    if (!match || match.sizeStocks.length !== 1) return;
-    this.addProduct(match, match.sizeStocks[0].size);
+    const match = varianteEscaneada(this.products(), term);
+    if (match) this.addProduct(match.product, match.size);
   }
 
   /** Paginación client-side de la grilla. */

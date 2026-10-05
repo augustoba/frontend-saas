@@ -68,6 +68,10 @@ export class AdminProductFormComponent {
   readonly sizeStocks = signal<Map<ProductSize, number>>(
     new Map((this.editingProduct?.sizeStocks ?? []).map((s) => [s.size, s.stock]))
   );
+  /** Código de barras de cada variante (opcional; el lector del punto de venta lo reconoce). */
+  readonly variantBarcodes = signal<Map<ProductSize, string>>(
+    new Map((this.editingProduct?.sizeStocks ?? []).filter((s) => s.barcode).map((s) => [s.size, s.barcode as string]))
+  );
 
   /** Parametrías elegidas: { [groupId]: optionId[] } */
   readonly selectedParams = signal<ProductParams>(
@@ -316,6 +320,20 @@ export class AdminProductFormComponent {
     });
   }
 
+  barcodeOf(size: ProductSize): string {
+    return this.variantBarcodes().get(size) ?? '';
+  }
+
+  setBarcode(size: ProductSize, event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    this.variantBarcodes.update((current) => {
+      const next = new Map(current);
+      if (value) next.set(size, value);
+      else next.delete(size);
+      return next;
+    });
+  }
+
   setStock(size: ProductSize, event: Event): void {
     const raw = Number((event.target as HTMLInputElement).value);
     const value = Number.isFinite(raw) ? Math.max(0, Math.trunc(raw)) : 0;
@@ -389,7 +407,11 @@ export class AdminProductFormComponent {
       lowStockThreshold: this.lowStockThreshold() ?? undefined,
       images: this.images(),
       params: this.selectedParams(),
-      sizeStocks: Array.from(this.sizeStocks(), ([size, stock]) => ({ size, stock })),
+      sizeStocks: Array.from(this.sizeStocks(), ([size, stock]) => ({
+        size,
+        stock,
+        barcode: this.variantBarcodes().get(size) || null,
+      })),
     };
 
     const done = () => this.router.navigate(['/admin/productos']);

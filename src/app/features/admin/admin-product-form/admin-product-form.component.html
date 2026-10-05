@@ -244,7 +244,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           @for (size of scaleSizes(); track size) {
             <div
-              class="flex items-center gap-2 rounded-lg px-2.5 py-2 ring-1 ring-black/5 transition-colors"
+              class="flex flex-wrap items-center gap-2 rounded-lg px-2.5 py-2 ring-1 ring-black/5 transition-colors"
               [class.bg-brand-50]="isSizeEnabled(size)"
             >
               <button
@@ -265,7 +265,18 @@
                   [value]="stockOf(size)"
                   (input)="setStock(size, $event)"
                   [attr.aria-label]="'Stock para talle ' + size"
-                  class="w-full min-w-0 rounded-md border border-stone-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  class="flex-1 min-w-0 rounded-md border border-stone-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                />
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Código de barras (opcional)"
+                  [value]="barcodeOf(size)"
+                  (input)="setBarcode(size, $event)"
+                  [attr.aria-label]="'Código de barras del talle ' + size"
+                  class="basis-full min-w-0 rounded-md border border-stone-200 px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-400"
                 />
               } @else {
                 <span class="text-xs text-stone-400">No se vende</span>
